@@ -4,12 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "serve": "tsx src/index.ts"
+    "serve": "tsx src/index.ts",
+    "build": "tsx src/deploy-commands.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@discordjs/rest": "^2.0.1",
     "discord.js": "^14.13.0",
     "dotenv": "^16.3.1",
     "tsx": "^3.13.0",
