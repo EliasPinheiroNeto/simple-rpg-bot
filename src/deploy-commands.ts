@@ -1,14 +1,13 @@
 import 'dotenv/config'
 import { REST, Routes, SlashCommandBuilder } from "discord.js"
+import command from './commands/health-bar-creation'
 
 const commands = [
-    new SlashCommandBuilder()
-        .setName("sapato")
-        .setDescription("replies with pong")
+    command.data
 ]
 
 const rest = new REST().setToken(process.env.DISCORD_TOKEN)
 
-rest.put(Routes.applicationCommands("1163641363926093888"), { body: commands }).then(() => {
-    console.log("deu")
+rest.put(Routes.applicationCommands(process.env.APPLICATION_ID), { body: commands }).then(() => {
+    console.log("commands created")
 })

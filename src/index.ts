@@ -1,57 +1,24 @@
-import dotenv from 'dotenv'
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, Client, Events } from 'discord.js'
-
-dotenv.config()
-const TOKEN = process.env.DISCORD_TOKEN
-
+import 'dotenv/config'
+import fs from 'fs'
+import { Client, CommandInteraction } from 'discord.js'
 
 const client = new Client({ intents: ["Guilds", "GuildMessages", "MessageContent"] })
 
-client.once(Events.ClientReady, c => {
+import command from './commands/health-bar-creation'
+
+client.once("ready", c => {
     console.log(`Ready! Logged in as ${c.user.tag}`)
 })
 
-client.on("messageCreate", async message => {
-    if (message.content == "oi") {
-        message.reply("Oi meu mano")
-        return;
-    }
-
-    if (message.content == "button") {
-        const confirm = new ButtonBuilder()
-            .setCustomId('confirm')
-            .setLabel("Confirmar")
-            .setStyle(ButtonStyle.Success)
-
-        const row = new ActionRowBuilder<ButtonBuilder>()
-            .addComponents(confirm)
-
-
-        message.channel.send({
-            content: "Tem certeza que quer me dar seu cu?",
-            components: [row]
-        })
-    }
-})
-
 client.on('interactionCreate', async interaction => {
-    if (interaction.isButton() && interaction.customId == "confirm") {
-        // interaction.channel?.send("Apertou o botão, iihh ala")
-        console.log(interaction.message.edit("Ueeeeeeepa"))
-        interaction.deferUpdate()
-        return
-    }
-    console.log(interaction);
+    if (interaction.isCommand()) {
+        const { commandName } = interaction;
 
-    if (!interaction.isCommand()) {
-        return
-    }
-
-    const { commandName } = interaction;
-    if (commandName == 'ping') {
-        interaction.reply('Pong')
+        if (commandName == command.data.name) {
+            command.execute(interaction)
+        }
         return
     }
 })
 
-client.login(TOKEN)
+client.login(process.env.DISCORD_TOKEN)
