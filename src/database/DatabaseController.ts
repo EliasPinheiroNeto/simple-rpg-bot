@@ -17,17 +17,11 @@ export default class DatabaseController {
         fs.writeFileSync(DatabaseController.dbPath, "[]")
     }
 
-    public createHealthBar(healthMax: number, guildId: number, channelId: number) {
-        const healthBarId = crypto.randomBytes(16).toString("hex")
-        console.log(healthBarId)
-
+    public createHealthBar(healthMax: number, messageId: number) {
         const db = JSON.parse(fs.readFileSync(DatabaseController.dbPath).toString())
-        console.log(db)
 
         const healthBar = {
-            healthBarId,
-            guildId,
-            channelId,
+            messageId,
             healthMax,
             healthPoints: healthMax
         }

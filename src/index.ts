@@ -1,6 +1,5 @@
 import 'dotenv/config'
-import fs from 'fs'
-import { Client, CommandInteraction } from 'discord.js'
+import { Client } from 'discord.js'
 
 const client = new Client({ intents: ["Guilds", "GuildMessages", "MessageContent"] })
 
@@ -18,6 +17,10 @@ client.on('interactionCreate', async interaction => {
             command.execute(interaction)
         }
         return
+    }
+
+    if (interaction.isButton()) {
+        console.log(interaction.message.id)
     }
 })
 
