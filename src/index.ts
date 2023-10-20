@@ -3,7 +3,7 @@ import { Client } from 'discord.js'
 
 const client = new Client({ intents: ["Guilds", "GuildMessages", "MessageContent"] })
 
-import command from './commands/health-bar-creation'
+import command from './commands/health-bar'
 import DatabaseController from './database/DatabaseController'
 
 client.once("ready", c => {
@@ -22,15 +22,35 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.isButton()) {
         const { customId } = interaction
+        const db = new DatabaseController()
 
-        if (customId == 'damage1') {
-            const db = new DatabaseController()
-            const healthBar = db.getHealthBar(Number.parseInt(interaction.message.id))
-            healthBar.healthPoints -= 1
-            db.updateHealthBar(Number.parseInt(interaction.message.id), healthBar.healthPoints)
-
-            interaction.message.edit("" + healthBar.healthPoints)
+        const healthBar = db.getHealthBar(Number.parseInt(interaction.message.id))
+        if (!healthBar) {
+            return
         }
+
+        switch (customId) {
+            case 'damage1':
+                healthBar.healthPoints -= 1
+                break
+
+            case 'damage5':
+                healthBar.healthPoints -= 5
+                break
+
+            case 'heal1':
+                healthBar.healthPoints += 1
+                break
+
+            case 'heal5':
+                healthBar.healthPoints += 5
+                break
+        }
+
+        db.updateHealthBar(healthBar)
+
+        interaction.message.edit("" + healthBar.healthPoints)
+        interaction.deferUpdate()
     }
 })
 
