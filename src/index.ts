@@ -1,10 +1,14 @@
 import 'dotenv/config'
-import { Client } from 'discord.js'
+import { Client, InteractionType } from 'discord.js'
 
 const client = new Client({ intents: ["Guilds", "GuildMessages", "MessageContent"] })
 
-import command from './commands/health-bar'
+import commandHealthBar from './commands/CommandHealthBar'
 import DatabaseController from './database/DatabaseController'
+
+const commands = [
+    commandHealthBar,
+]
 
 client.once("ready", c => {
     console.log(`Ready! Logged in as ${c.user.tag}`)
@@ -14,11 +18,18 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isCommand()) {
         const { commandName } = interaction;
 
-        if (commandName == command.data.name) {
-            command.execute(interaction)
+        const command = commands.find((c) => {
+            return c.data.name == commandName
+        })
+
+        if (!command) {
+            return
         }
+
+        command.execute(interaction)
         return
     }
+
 
     if (interaction.isButton()) {
         const { customId } = interaction
@@ -47,10 +58,24 @@ client.on('interactionCreate', async interaction => {
                 break
         }
 
-        db.updateHealthBar(healthBar)
+        const percent = (healthBar.healthPoints / healthBar.healthMax) * 10
+        const string = []
+        for (let i = 1; i <= 10; i++) {
+            if (i <= percent || (i == 1 && healthBar.healthPoints >= 1)) {
+                string.push("🟩")
+            } else {
+                string.push("🟥")
+            }
+        }
 
-        interaction.message.edit("" + healthBar.healthPoints)
-        interaction.deferUpdate()
+        await interaction.message.edit(`Pontos de vida: [${healthBar.healthPoints} / ${healthBar.healthMax}] \n${string.join("")}`)
+        db.updateHealthBar(healthBar)
+        try {
+            await interaction.deferUpdate()
+        } catch (err) {
+            console.log(err)
+            return
+        }
     }
 })
 
