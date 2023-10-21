@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder, CommandInteraction, ButtonInteraction } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder, CommandInteraction, ButtonInteraction, Message } from "discord.js";
 import DatabaseController from "../database/DatabaseController";
 import ICommand from "../types/ICommand";
 
@@ -16,6 +16,8 @@ class CommandHealthBar implements ICommand {
 
 
     public buttons = ['commandHealth-heal1', 'commandHealth-heal5', 'commandHealth-damage1', 'commandHealth-damage5']
+
+    public commandMessages = ['-setMax']
 
     public execute(interaction: CommandInteraction) {
         const healthMax = interaction.options.get('hp')?.value as number | undefined
@@ -94,6 +96,34 @@ class CommandHealthBar implements ICommand {
             console.log(err)
             return
         }
+    }
+
+    public async executeCommandMessages(message: Message) {
+        const { content, reference } = message
+
+        if (!reference || !reference.messageId) {
+            return
+        }
+
+        const db = new DatabaseController()
+        const healthBar = db.getHealthBar(Number.parseInt(reference.messageId))
+        if (!healthBar) {
+            return
+        }
+
+        if (content.startsWith('-setMax ')) {
+            const number = Number.parseInt(content.replace('-setMax ', ''))
+            if (isNaN(number)) {
+                return
+            }
+
+            healthBar.healthMax = number
+        }
+
+        const referenceMessage = await message.channel.messages.fetch(reference.messageId)
+        await referenceMessage.edit(this.generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
+        db.updateHealthBar(healthBar)
+        message.delete()
     }
 
     private generateHealthMessage(healthMax: number, healthPoints: number = healthMax) {

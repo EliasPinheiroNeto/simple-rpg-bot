@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { Client, InteractionType } from 'discord.js'
+import { Client } from 'discord.js'
 
 const client = new Client({ intents: ["Guilds", "GuildMessages", "MessageContent"] })
 
@@ -16,12 +16,10 @@ client.once("ready", c => {
     console.log(`Ready! Logged in as ${c.user.tag}`)
 })
 
-client.on('interactionCreate', async interaction => {
+client.on('interactionCreate', interaction => {
     if (interaction.isCommand()) {
-        const { commandName } = interaction;
-
         const command = commands.find((c) => {
-            return c.data.name == commandName
+            return c.data.name == interaction.commandName
         })
 
         if (!command) {
@@ -34,14 +32,12 @@ client.on('interactionCreate', async interaction => {
 
 
     if (interaction.isButton()) {
-        const { customId } = interaction
-
         const command = commands.find(c => {
             if (!c.buttons) {
                 return false
             }
 
-            return c.buttons.includes(customId)
+            return c.buttons.includes(interaction.customId)
         })
 
         if (!command || !command.executeButtons) {
@@ -50,6 +46,27 @@ client.on('interactionCreate', async interaction => {
 
         command.executeButtons(interaction)
     }
+})
+
+client.on("messageCreate", message => {
+    if (!message.reference || message.mentions.repliedUser?.id != process.env.APPLICATION_ID || !message.content.startsWith('-')) {
+        return
+    }
+
+    const command = commands.find(c => {
+        if (!c.commandMessages) {
+            return false
+        }
+
+        const commandMessage = message.content.split(' ')[0]
+        return c.commandMessages.includes(commandMessage)
+    })
+
+    if (!command || !command.executeCommandMessages) {
+        return
+    }
+
+    command.executeCommandMessages(message)
 })
 
 client.login(process.env.DISCORD_TOKEN)
