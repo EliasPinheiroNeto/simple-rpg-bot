@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "discord.js";
 
 export default interface ICommand {
-    data: SlashCommandBuilder | Omit
+    data: Omit<SlashCommandBuilder>
     execute(interaction): void
     buttons?: string[]
     executeButtons?(interaction): void

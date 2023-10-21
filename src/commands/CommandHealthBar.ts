@@ -100,11 +100,22 @@ class CommandHealthBar implements ICommand {
         const percent = (healthPoints / healthMax) * 10
         const healthMessage = []
         for (let i = 1; i <= 10; i++) {
-            if (i <= percent || (i == 1 && healthPoints >= 1)) {
+            if (i == 1 && healthPoints >= 1) {
                 healthMessage.push("🟩")
-            } else {
-                healthMessage.push("🟥")
+                continue
             }
+
+            if (10 - i < percent - 10) {
+                healthMessage.push("🟨")
+                continue
+            }
+
+            if (i <= percent) {
+                healthMessage.push("🟩")
+                continue
+            }
+
+            healthMessage.push("🟥")
         }
 
         return `Pontos de vida: [${healthPoints} / ${healthMax}] \n${healthMessage.join("")}`
