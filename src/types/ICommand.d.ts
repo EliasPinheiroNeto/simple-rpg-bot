@@ -9,4 +9,6 @@ export default interface ICommand {
 
     commandMessages?: string[]
     async executeCommandMessages?(interaction): void
+
+    onDelete?(message): void
 }

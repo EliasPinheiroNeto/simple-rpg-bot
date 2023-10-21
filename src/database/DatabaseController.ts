@@ -20,7 +20,12 @@ export default class DatabaseController {
         fs.writeFileSync(DatabaseController.dbPath, "[]")
     }
 
-    public createHealthBar(healthMax: number, messageId: number) {
+    private save() {
+        fs.writeFileSync(DatabaseController.dbPath, JSON.stringify(this.db))
+    }
+
+
+    public createHealthBar(healthMax: number, messageId: string) {
         const healthBar: IHealthBar = {
             messageId,
             healthMax,
@@ -29,22 +34,35 @@ export default class DatabaseController {
 
         this.db.push(healthBar)
 
-        fs.writeFileSync(DatabaseController.dbPath, JSON.stringify(this.db))
+        this.save()
     }
 
     public updateHealthBar(healthBar: IHealthBar) {
-        const index = this.db.findIndex((h) => {
+        const index = this.db.findIndex((h: IHealthBar) => {
             return h.messageId == healthBar.messageId
         })
 
         this.db[index].healthPoints = healthBar.healthPoints
 
-        fs.writeFileSync(DatabaseController.dbPath, JSON.stringify(this.db))
+        this.save()
     }
 
-    public getHealthBar(messageId: number): IHealthBar | undefined {
-        return this.db.find((h: any) => {
+    public getHealthBar(messageId: string): IHealthBar | undefined {
+        return this.db.find((h: IHealthBar) => {
             return h.messageId == messageId
         })
+    }
+
+    public deleteHealthBar(messageId: string) {
+        const index = this.db.findIndex((h: IHealthBar) => {
+            return h.messageId == messageId
+        })
+
+        if (index == -1) {
+            return
+        }
+
+        this.db.splice(index, 1)
+        this.save()
     }
 }

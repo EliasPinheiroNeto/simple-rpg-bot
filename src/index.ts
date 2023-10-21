@@ -69,4 +69,16 @@ client.on("messageCreate", message => {
     command.executeCommandMessages(message)
 })
 
+client.on("messageDelete", message => {
+    if (message.author?.id != process.env.APPLICATION_ID) {
+        return
+    }
+
+    commands.forEach(c => {
+        if (c.onDelete) {
+            c.onDelete(message)
+        }
+    })
+})
+
 client.login(process.env.DISCORD_TOKEN)

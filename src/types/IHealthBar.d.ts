@@ -1,5 +1,5 @@
 export default interface IHealthBar {
-    messageId: number
+    messageId: string
     healthMax: number
     healthPoints: number
 }

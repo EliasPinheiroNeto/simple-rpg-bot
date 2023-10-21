@@ -19,7 +19,7 @@ class CommandHealthBar implements ICommand {
 
     public commandMessages = ['-setMax']
 
-    public execute(interaction: CommandInteraction) {
+    public async execute(interaction: CommandInteraction) {
         const healthMax = interaction.options.get('hp')?.value as number | undefined
         if (!healthMax) {
             return
@@ -53,11 +53,11 @@ class CommandHealthBar implements ICommand {
             components: [row],
         }).then((message) => {
             const db = new DatabaseController()
-            db.createHealthBar(healthMax, Number.parseInt(message.id))
+            db.createHealthBar(healthMax, message.id)
         })
 
-        interaction.reply("Criando barra de vida")
-        interaction.deleteReply()
+        await interaction.reply("Criando barra")
+        await interaction.deleteReply()
         return
     }
 
@@ -65,7 +65,7 @@ class CommandHealthBar implements ICommand {
         const { customId } = interaction
 
         const db = new DatabaseController()
-        const healthBar = db.getHealthBar(Number.parseInt(interaction.message.id))
+        const healthBar = db.getHealthBar(interaction.message.id)
         if (!healthBar) {
             return
         }
@@ -106,7 +106,7 @@ class CommandHealthBar implements ICommand {
         }
 
         const db = new DatabaseController()
-        const healthBar = db.getHealthBar(Number.parseInt(reference.messageId))
+        const healthBar = db.getHealthBar(reference.messageId)
         if (!healthBar) {
             return
         }
@@ -124,6 +124,11 @@ class CommandHealthBar implements ICommand {
         await referenceMessage.edit(this.generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
         db.updateHealthBar(healthBar)
         message.delete()
+    }
+
+    public onDelete(message: Message) {
+        const db = new DatabaseController()
+        db.deleteHealthBar(message.id)
     }
 
     private generateHealthMessage(healthMax: number, healthPoints: number = healthMax) {
