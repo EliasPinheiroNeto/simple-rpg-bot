@@ -4,10 +4,12 @@ import { Client, InteractionType } from 'discord.js'
 const client = new Client({ intents: ["Guilds", "GuildMessages", "MessageContent"] })
 
 import commandHealthBar from './commands/CommandHealthBar'
-import DatabaseController from './database/DatabaseController'
+import commandPing from './commands/CommandPing'
+import ICommand from './types/ICommand'
 
-const commands = [
+const commands: ICommand[] = [
     commandHealthBar,
+    commandPing
 ]
 
 client.once("ready", c => {
@@ -33,49 +35,20 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.isButton()) {
         const { customId } = interaction
-        const db = new DatabaseController()
 
-        const healthBar = db.getHealthBar(Number.parseInt(interaction.message.id))
-        if (!healthBar) {
-            return
-        }
-
-        switch (customId) {
-            case 'damage1':
-                healthBar.healthPoints -= 1
-                break
-
-            case 'damage5':
-                healthBar.healthPoints -= 5
-                break
-
-            case 'heal1':
-                healthBar.healthPoints += 1
-                break
-
-            case 'heal5':
-                healthBar.healthPoints += 5
-                break
-        }
-
-        const percent = (healthBar.healthPoints / healthBar.healthMax) * 10
-        const string = []
-        for (let i = 1; i <= 10; i++) {
-            if (i <= percent || (i == 1 && healthBar.healthPoints >= 1)) {
-                string.push("🟩")
-            } else {
-                string.push("🟥")
+        const command = commands.find(c => {
+            if (!c.buttons) {
+                return false
             }
-        }
 
-        await interaction.message.edit(`Pontos de vida: [${healthBar.healthPoints} / ${healthBar.healthMax}] \n${string.join("")}`)
-        db.updateHealthBar(healthBar)
-        try {
-            await interaction.deferUpdate()
-        } catch (err) {
-            console.log(err)
+            return c.buttons.includes(customId)
+        })
+
+        if (!command || !command.executeButtons) {
             return
         }
+
+        command.executeButtons(interaction)
     }
 })
 

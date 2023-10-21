@@ -1,7 +1,8 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder, CommandInteraction } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder, CommandInteraction, ButtonInteraction } from "discord.js";
 import DatabaseController from "../database/DatabaseController";
+import ICommand from "../types/ICommand";
 
-class CommandHealthBar {
+class CommandHealthBar implements ICommand {
     public data = new SlashCommandBuilder()
         .setName("health-bar")
         .setDescription("Creates a simple health bar")
@@ -13,6 +14,9 @@ class CommandHealthBar {
                 .setRequired(true)
         })
 
+
+    public buttons = ['commandHealth-heal1', 'commandHealth-heal5', 'commandHealth-damage1', 'commandHealth-damage5']
+
     public execute(interaction: CommandInteraction) {
         const healthMax = interaction.options.get('hp')?.value as number | undefined
         if (!healthMax) {
@@ -20,22 +24,22 @@ class CommandHealthBar {
         }
 
         const heal1 = new ButtonBuilder()
-            .setCustomId(`heal1`)
+            .setCustomId(`commandHealth-heal1`)
             .setLabel("+1")
             .setStyle(ButtonStyle.Success)
 
         const heal5 = new ButtonBuilder()
-            .setCustomId(`heal5`)
+            .setCustomId(`commandHealth-heal5`)
             .setLabel("+5")
             .setStyle(ButtonStyle.Success)
 
         const damage1 = new ButtonBuilder()
-            .setCustomId(`damage1`)
+            .setCustomId(`commandHealth-damage1`)
             .setLabel("-1")
             .setStyle(ButtonStyle.Danger)
 
         const damage5 = new ButtonBuilder()
-            .setCustomId(`damage5`)
+            .setCustomId(`commandHealth-damage5`)
             .setLabel("-5")
             .setStyle(ButtonStyle.Danger)
 
@@ -53,6 +57,43 @@ class CommandHealthBar {
         interaction.reply("Criando barra de vida")
         interaction.deleteReply()
         return
+    }
+
+    public async executeButtons(interaction: ButtonInteraction) {
+        const { customId } = interaction
+
+        const db = new DatabaseController()
+        const healthBar = db.getHealthBar(Number.parseInt(interaction.message.id))
+        if (!healthBar) {
+            return
+        }
+
+        switch (customId) {
+            case `commandHealth-heal1`:
+                healthBar.healthPoints += 1
+                break;
+
+            case `commandHealth-heal5`:
+                healthBar.healthPoints += 5
+                break;
+
+            case `commandHealth-damage1`:
+                healthBar.healthPoints -= 1
+                break;
+
+            case `commandHealth-damage5`:
+                healthBar.healthPoints -= 5
+                break;
+        }
+
+        await interaction.message.edit(this.generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
+        db.updateHealthBar(healthBar)
+        try {
+            await interaction.deferUpdate()
+        } catch (err) {
+            console.log(err)
+            return
+        }
     }
 
     private generateHealthMessage(healthMax: number, healthPoints: number = healthMax) {
