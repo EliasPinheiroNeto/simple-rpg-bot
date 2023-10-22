@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder, CommandInteraction, ButtonInteraction, Message } from "discord.js";
-import DatabaseController from "../database/DatabaseController";
+import HealthBarsController from "../database/HealthBarsController";
 import ICommand from "../types/ICommand";
 
 class CommandHealthBar implements ICommand {
@@ -52,7 +52,7 @@ class CommandHealthBar implements ICommand {
             content: this.generateHealthMessage(healthMax),
             components: [row],
         }).then((message) => {
-            const db = new DatabaseController()
+            const db = new HealthBarsController()
             db.createHealthBar(healthMax, message.id)
         })
 
@@ -64,7 +64,8 @@ class CommandHealthBar implements ICommand {
     public async executeButtons(interaction: ButtonInteraction) {
         const { customId } = interaction
 
-        const db = new DatabaseController()
+        const db = new HealthBarsController
+            ()
         const healthBar = db.getHealthBar(interaction.message.id)
         if (!healthBar) {
             return
@@ -105,7 +106,8 @@ class CommandHealthBar implements ICommand {
             return
         }
 
-        const db = new DatabaseController()
+        const db = new HealthBarsController
+            ()
         const healthBar = db.getHealthBar(reference.messageId)
         if (!healthBar) {
             return
@@ -127,7 +129,8 @@ class CommandHealthBar implements ICommand {
     }
 
     public onDelete(message: Message) {
-        const db = new DatabaseController()
+        const db = new HealthBarsController
+            ()
         db.deleteHealthBar(message.id)
     }
 

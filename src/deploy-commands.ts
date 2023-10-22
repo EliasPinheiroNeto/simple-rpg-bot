@@ -2,10 +2,12 @@ import 'dotenv/config'
 import { REST, Routes } from "discord.js"
 import commandHealthBar from './commands/CommandHealthBar'
 import commandPing from './commands/CommandPing'
+import commandCreateRoll from './commands/CommandCreateRoll'
 
 const commands = [
     commandHealthBar.data,
-    commandPing.data
+    commandPing.data,
+    commandCreateRoll.data
 ]
 
 const rest = new REST().setToken(process.env.DISCORD_TOKEN)

@@ -1,68 +1,29 @@
 import fs from 'fs'
-import path from 'path'
 
-import IHealthBar from '../types/IHealthBar';
-
-export default class DatabaseController {
-    private static dbPath = path.resolve("./src/database/database.json")
-    private db: IHealthBar[] = [];
-
-    constructor() {
+export default class DatabaseController<T extends object> {
+    private dbPath: string
+    protected db: Array<T> = []
+    constructor(dbPath: string) {
+        this.dbPath = dbPath
         this.onCreate();
     }
 
     private onCreate(): void {
-        if (fs.existsSync(DatabaseController.dbPath)) {
-            this.db = JSON.parse(fs.readFileSync(DatabaseController.dbPath).toString())
+        if (fs.existsSync(this.dbPath)) {
+
+            this.db = JSON.parse(fs.readFileSync(this.dbPath).toString())
             return
         }
 
-        fs.writeFileSync(DatabaseController.dbPath, "[]")
+        fs.writeFileSync(this.dbPath, "[]")
     }
 
-    private save() {
-        fs.writeFileSync(DatabaseController.dbPath, JSON.stringify(this.db))
+    protected save() {
+        fs.writeFileSync(this.dbPath, JSON.stringify(this.db))
     }
 
-
-    public createHealthBar(healthMax: number, messageId: string) {
-        const healthBar: IHealthBar = {
-            messageId,
-            healthMax,
-            healthPoints: healthMax
-        }
-
-        this.db.push(healthBar)
-
-        this.save()
-    }
-
-    public updateHealthBar(healthBar: IHealthBar) {
-        const index = this.db.findIndex((h: IHealthBar) => {
-            return h.messageId == healthBar.messageId
-        })
-
-        this.db[index].healthPoints = healthBar.healthPoints
-
-        this.save()
-    }
-
-    public getHealthBar(messageId: string): IHealthBar | undefined {
-        return this.db.find((h: IHealthBar) => {
-            return h.messageId == messageId
-        })
-    }
-
-    public deleteHealthBar(messageId: string) {
-        const index = this.db.findIndex((h: IHealthBar) => {
-            return h.messageId == messageId
-        })
-
-        if (index == -1) {
-            return
-        }
-
-        this.db.splice(index, 1)
+    public insert(object: T) {
+        this.db.push(object)
         this.save()
     }
 }

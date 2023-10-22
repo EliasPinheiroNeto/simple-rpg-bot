@@ -1,14 +1,14 @@
-import { SlashCommandBuilder } from "discord.js";
+import { ButtonInteraction, CommandInteraction, SlashCommandBuilder } from "discord.js";
 
 export default interface ICommand {
-    data: Omit<SlashCommandBuilder>
-    execute(interaction): void
+    public data: Omit<SlashCommandBuilder>
+    public execute(interaction: CommandInteraction): void
 
-    buttons?: string[]
-    async executeButtons?(interaction): void
+    public buttons?: string[]
+    public async executeButtons?(interaction: ButtonInteraction): void
 
-    commandMessages?: string[]
-    async executeCommandMessages?(interaction): void
+    public commandMessages?: string[]
+    public async executeCommandMessages?(interaction): void
 
-    onDelete?(message): void
+    public onDelete?(message): void
 }

@@ -5,11 +5,13 @@ const client = new Client({ intents: ["Guilds", "GuildMessages", "MessageContent
 
 import commandHealthBar from './commands/CommandHealthBar'
 import commandPing from './commands/CommandPing'
+import commandCreateRoll from './commands/CommandCreateRoll'
 import ICommand from './types/ICommand'
 
 const commands: ICommand[] = [
     commandHealthBar,
-    commandPing
+    commandPing,
+    commandCreateRoll
 ]
 
 client.once("ready", c => {
