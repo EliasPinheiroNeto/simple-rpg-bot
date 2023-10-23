@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, CommandInteraction, SlashCommandBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, CommandInteraction, SlashCommandBuilder, time } from "discord.js";
 import Roll from 'roll'
 
 import ICommand from "../types/ICommand";
@@ -86,33 +86,37 @@ class CommandCreateRoll implements ICommand {
                 }
 
                 const roller = new Roll()
-                const roll = roller.roll(diceRoll.roll.replace("#", ""))
 
-                let bonus = 0
-                let result = 0;
                 const rolls = diceRoll.roll.replace("#", "").split(/([\+\-]{1}[1-9]+)(?!d)/g).filter(s => s != '')
-                // rolls.forEach(s => {
-                //     if (s.includes("s")) {
-                //         return
-                //     }
 
-                //     bonus += Number.parseInt(s)
-                // })
+                let result = 0;
+                let stringMessage = [`Rolagem **Ataque** _[${diceRoll.roll}_]\n`]
 
                 if (diceRoll.roll.includes("#")) {
-                    // const times = roller.roll(rolls[0])
-                    // times.rolled.forEach(res =>{
+                    const times = Number.parseInt(rolls[0][0])
+                    rolls[0] = rolls[0].replace(times.toString(), '1')
+                    for (let i = 0; i < times; i++) {
+                        const string: string[] = []
+                        rolls.forEach(r => {
+                            if (r.includes("d")) {
+                                const rResult = roller.roll(r.replace(/^[\-\+]/g, ""))
+                                result += rResult.result
 
-                    // })
-                    // roll.rolled.forEach(r => {
-                    //     result.push(`\` ${r + bonus} \` ⟵ [${r}] ${bonus > 0 ? `+${bonus}` : bonus < 0 ? bonus : ''}`)
-                    // })
+                                string.push(`${/^[\-\+]/g.test(r) ? r[0] : ''} [${rResult.rolled}] ${r.replace(/^[\-\+]/g, "")} `)
+                                return
+                            }
 
-                    // interaction.channel?.send(
-                    //     `Rolagem **Ataque** _[${diceRoll.roll}_]\n` + result.join("\n"))
+                            const rBonus = Number.parseInt(r)
+                            result += rBonus
+                            string.push(`${/^[\-\+]/g.test(r) ? r[0] : ''} ${Math.abs(Number.parseInt(r))} `)
+                        })
+
+                        string.unshift(`\` ${result} \` ⟵ `)
+                        stringMessage.push(...string, '\n')
+                        result = 0
+                    }
+
                 } else {
-                    let stringMessage = [`Rolagem **Ataque** _[${diceRoll.roll}_]\n`]
-
                     rolls.forEach(r => {
                         if (r.includes("d")) {
                             const rResult = roller.roll(r.replace(/^[\-\+]/g, ""))
@@ -133,8 +137,9 @@ class CommandCreateRoll implements ICommand {
                         ...stringMessage.slice(1)
                     ]
 
-                    interaction.channel?.send(stringMessage.join(""))
                 }
+
+                interaction.channel?.send(stringMessage.join(""))
                 break
         }
 
