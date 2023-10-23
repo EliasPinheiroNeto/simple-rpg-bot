@@ -30,21 +30,16 @@ class CommandCreateRoll implements ICommand {
     public async execute(interaction: CommandInteraction): Promise<void> {
         const { options, guildId, channelId, channel } = interaction
         const roller = new Roll()
+        const rollInput = options.get("roll")?.value
 
-        if (!guildId || !channelId || !channel) {
+        if (!guildId || !channelId || !channel || !rollInput || typeof rollInput != "string") {
             interaction.reply({ content: "Ocorreu algum erro", ephemeral: true })
             return
         }
 
-        let rollString = options.get("roll")?.value
-        if (!rollString || typeof rollString != "string") {
-            interaction.reply({ content: "Ocorreu algum erro", ephemeral: true })
-            return
-        }
+        const roll = rollInput.replace(/\s/g, "").toLowerCase()
 
-        rollString = rollString.split(" ").join("")
-
-        if (!roller.validate(rollString.replace("#", ""))) {
+        if (!roller.validate(roll.replace("#", ""))) {
             interaction.reply({ content: "Sintaxe invalida", ephemeral: true })
             return
         }
@@ -57,12 +52,14 @@ class CommandCreateRoll implements ICommand {
         const row = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(buttonRoll)
 
+
+        const rollName = options.get("roll-name")?.value as string
         channel.send({
-            content: `**${options.get("roll-name", true)?.value}**  _[ ${rollString} ]_`,
+            content: `**${rollName}**  _[ ${roll} ]_`,
             components: [row]
-        }).then(m => {
+        }).then(mensage => {
             const db = new DiceRollsController()
-            db.insert({ guildId, channelId, messageId: m.id, roll: `${rollString}` })
+            db.insert({ guildId, channelId, messageId: mensage.id, roll, rollName })
         })
 
 
@@ -76,74 +73,59 @@ class CommandCreateRoll implements ICommand {
 
     public executeButtons(interaction: ButtonInteraction): void {
         const { customId, message } = interaction
+        const db = new DiceRollsController()
+        const diceRoll = db.get(message.id)
+        if (!diceRoll) {
+            return
+        }
 
         switch (customId) {
             case "roll":
-                const db = new DiceRollsController()
-                const diceRoll = db.get(message.id)
-                if (!diceRoll) {
-                    return
-                }
-
-                const roller = new Roll()
-
                 const rolls = diceRoll.roll.replace("#", "").split(/([\+\-]{1}[1-9]+)(?!d)/g).filter(s => s != '')
 
-                let result = 0;
-                let stringMessage = [`Rolagem **Ataque** _[${diceRoll.roll}_]\n`]
+                const finalMessage = [`Rolagem **${diceRoll.rollName}** _[${diceRoll.roll}_]\n`]
 
                 if (diceRoll.roll.includes("#")) {
                     const times = Number.parseInt(rolls[0][0])
                     rolls[0] = rolls[0].replace(times.toString(), '1')
+
                     for (let i = 0; i < times; i++) {
-                        const string: string[] = []
-                        rolls.forEach(r => {
-                            if (r.includes("d")) {
-                                const rResult = roller.roll(r.replace(/^[\-\+]/g, ""))
-                                result += rResult.result
-
-                                string.push(`${/^[\-\+]/g.test(r) ? r[0] : ''} [${rResult.rolled}] ${r.replace(/^[\-\+]/g, "")} `)
-                                return
-                            }
-
-                            const rBonus = Number.parseInt(r)
-                            result += rBonus
-                            string.push(`${/^[\-\+]/g.test(r) ? r[0] : ''} ${Math.abs(Number.parseInt(r))} `)
-                        })
-
-                        string.unshift(`\` ${result} \` ⟵ `)
-                        stringMessage.push(...string, '\n')
-                        result = 0
+                        finalMessage.push(...this.makeRolls(rolls))
                     }
-
                 } else {
-                    rolls.forEach(r => {
-                        if (r.includes("d")) {
-                            const rResult = roller.roll(r.replace(/^[\-\+]/g, ""))
-                            result += rResult.result
-
-                            stringMessage.push(`${/^[\-\+]/g.test(r) ? r[0] : ''} [${rResult.rolled}] ${r.replace(/^[\-\+]/g, "")} `)
-                            return
-                        }
-
-                        const rBonus = Number.parseInt(r)
-                        result += rBonus
-                        stringMessage.push(`${/^[\-\+]/g.test(r) ? r[0] : ''} ${Math.abs(Number.parseInt(r))} `)
-                    })
-
-                    stringMessage = [
-                        ...stringMessage.slice(0, 1),
-                        (`\` ${result} \` ⟵ `),
-                        ...stringMessage.slice(1)
-                    ]
-
+                    finalMessage.push(...this.makeRolls(rolls))
                 }
 
-                interaction.channel?.send(stringMessage.join(""))
+                interaction.channel?.send(finalMessage.join(""))
                 break
         }
 
         interaction.deferUpdate()
+    }
+
+    private makeRolls(rolls: string[]) {
+        const roller = new Roll()
+        let result = 0;
+        const string: string[] = []
+
+        rolls.forEach(r => {
+            if (r.includes("d")) {
+                const rResult = roller.roll(r.replace(/^[\-\+]/g, ""))
+                result += rResult.result
+
+                string.push(`${/^[\-\+]/g.test(r) ? r[0] : ''} [${rResult.rolled}] ${r.replace(/^[\-\+]/g, "")} `)
+                return
+            }
+
+            const rBonus = Number.parseInt(r)
+            result += rBonus
+            string.push(`${/^[\-\+]/g.test(r) ? r[0] : ''} ${Math.abs(Number.parseInt(r))} `)
+        })
+
+        string.unshift(`\` ${result} \` ⟵ `)
+        string.push('\n')
+
+        return string
     }
 }
 
