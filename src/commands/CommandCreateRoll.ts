@@ -1,4 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, CommandInteraction, SlashCommandBuilder } from "discord.js";
+import Roll from 'roll'
+
 import ICommand from "../types/ICommand";
 import DiceRollsController from "../database/DiceRollsController";
 
@@ -11,12 +13,11 @@ class CommandCreateRoll implements ICommand {
                 .setName("roll-name")
                 .setDescription("Ação da rolagem de dados, exemplo: Dano da Magia x, Resistência de destreza")
                 .setRequired(true)
-        }).addNumberOption(option => {
+        }).addStringOption(option => {
             return option
-                .setName("dice-sides")
-                .setDescription("Número de lados do dado")
+                .setName("roll")
+                .setDescription("Rolagem de dados")
                 .setRequired(true)
-                .setMinValue(1)
         })
         .addChannelOption(option => {
             return option
@@ -28,12 +29,25 @@ class CommandCreateRoll implements ICommand {
 
     public async execute(interaction: CommandInteraction): Promise<void> {
         const { options, guildId, channelId, channel } = interaction
+        const roller = new Roll()
 
         if (!guildId || !channelId || !channel) {
             interaction.reply({ content: "Ocorreu algum erro", ephemeral: true })
             return
         }
 
+        let rollString = options.get("roll")?.value
+        if (!rollString || typeof rollString != "string") {
+            interaction.reply({ content: "Ocorreu algum erro", ephemeral: true })
+            return
+        }
+
+        rollString = rollString.split(" ").join("")
+
+        if (!roller.validate(rollString.replace("#", ""))) {
+            interaction.reply({ content: "Sintaxe invalida", ephemeral: true })
+            return
+        }
 
         const buttonRoll = new ButtonBuilder()
             .setCustomId("roll")
@@ -43,13 +57,12 @@ class CommandCreateRoll implements ICommand {
         const row = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(buttonRoll)
 
-
         channel.send({
-            content: `**${options.get("roll-name")?.value}**  _[ 1d${options.get("dice-sides")?.value} ]_`,
+            content: `**${options.get("roll-name", true)?.value}**  _[ ${rollString} ]_`,
             components: [row]
         }).then(m => {
             const db = new DiceRollsController()
-            db.insert({ guildId, channelId, messageId: m.id, roll: `1d${options.get("dice-sides")?.value}` })
+            db.insert({ guildId, channelId, messageId: m.id, roll: `${rollString}` })
         })
 
 
@@ -66,9 +79,62 @@ class CommandCreateRoll implements ICommand {
 
         switch (customId) {
             case "roll":
-                const roll = Math.floor(Math.random() * 20 + 7)
-                interaction.message.edit(interaction.message.content + "\n> Resultado dos dados: ${roll}")
-                // interaction.channel?.send(`Resultado dos dados: ${roll}`)
+                const db = new DiceRollsController()
+                const diceRoll = db.get(message.id)
+                if (!diceRoll) {
+                    return
+                }
+
+                const roller = new Roll()
+                const roll = roller.roll(diceRoll.roll.replace("#", ""))
+
+                let bonus = 0
+                let result = 0;
+                const rolls = diceRoll.roll.replace("#", "").split(/([\+\-]{1}[1-9]+)(?!d)/g).filter(s => s != '')
+                // rolls.forEach(s => {
+                //     if (s.includes("s")) {
+                //         return
+                //     }
+
+                //     bonus += Number.parseInt(s)
+                // })
+
+                if (diceRoll.roll.includes("#")) {
+                    // const times = roller.roll(rolls[0])
+                    // times.rolled.forEach(res =>{
+
+                    // })
+                    // roll.rolled.forEach(r => {
+                    //     result.push(`\` ${r + bonus} \` ⟵ [${r}] ${bonus > 0 ? `+${bonus}` : bonus < 0 ? bonus : ''}`)
+                    // })
+
+                    // interaction.channel?.send(
+                    //     `Rolagem **Ataque** _[${diceRoll.roll}_]\n` + result.join("\n"))
+                } else {
+                    let stringMessage = [`Rolagem **Ataque** _[${diceRoll.roll}_]\n`]
+
+                    rolls.forEach(r => {
+                        if (r.includes("d")) {
+                            const rResult = roller.roll(r.replace(/^[\-\+]/g, ""))
+                            result += rResult.result
+
+                            stringMessage.push(`${/^[\-\+]/g.test(r) ? r[0] : ''} [${rResult.rolled}] ${r.replace(/^[\-\+]/g, "")} `)
+                            return
+                        }
+
+                        const rBonus = Number.parseInt(r)
+                        result += rBonus
+                        stringMessage.push(`${/^[\-\+]/g.test(r) ? r[0] : ''} ${Math.abs(Number.parseInt(r))} `)
+                    })
+
+                    stringMessage = [
+                        ...stringMessage.slice(0, 1),
+                        (`\` ${result} \` ⟵ `),
+                        ...stringMessage.slice(1)
+                    ]
+
+                    interaction.channel?.send(stringMessage.join(""))
+                }
                 break
         }
 

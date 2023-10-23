@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-export default class DatabaseController<T extends object> {
+export default class DatabaseController<T extends { messageId: string }> {
     private dbPath: string
     protected db: Array<T> = []
     constructor(dbPath: string) {
@@ -25,5 +25,11 @@ export default class DatabaseController<T extends object> {
     public insert(object: T) {
         this.db.push(object)
         this.save()
+    }
+
+    public get(messageId: string): T | undefined {
+        return this.db.find(entry => {
+            return entry.messageId == messageId
+        })
     }
 }
