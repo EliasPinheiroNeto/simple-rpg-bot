@@ -54,12 +54,13 @@ class CommandCreateRoll implements ICommand {
 
 
         const rollName = options.get("roll-name")?.value as string
+        const fullMessage = `**${rollName}**  _[ ${roll} ]_`
         channel.send({
-            content: `**${rollName}**  _[ ${roll} ]_`,
+            content: fullMessage,
             components: [row]
         }).then(mensage => {
             const db = new DiceRollsController()
-            db.insert({ guildId, channelId, messageId: mensage.id, roll, rollName })
+            db.insert({ guildId, channelId, messageId: mensage.id, roll, rollName, fullMessage })
         })
 
 
@@ -83,7 +84,7 @@ class CommandCreateRoll implements ICommand {
             case "roll":
                 const rolls = diceRoll.roll.replace("#", "").split(/([\+\-]{1}[1-9]+)(?!d)/g).filter(s => s != '')
 
-                const finalMessage = [`Rolagem **${diceRoll.rollName}** _[${diceRoll.roll}_]\n`]
+                const finalMessage = []
 
                 if (diceRoll.roll.includes("#")) {
                     const times = Number.parseInt(rolls[0][0])
@@ -96,11 +97,14 @@ class CommandCreateRoll implements ICommand {
                     finalMessage.push(...this.makeRolls(rolls))
                 }
 
-                interaction.channel?.send(finalMessage.join(""))
+                message.edit(`${diceRoll.fullMessage} \n${finalMessage.join("")}`).then(() => {
+                    interaction.deferUpdate()
+                    setTimeout(() => {
+                        message.edit(diceRoll.fullMessage)
+                    }, 5000)
+                })
                 break
         }
-
-        interaction.deferUpdate()
     }
 
     private makeRolls(rolls: string[]) {
