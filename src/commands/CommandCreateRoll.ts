@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, CommandInteraction, SlashCommandBuilder, time } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, CommandInteraction, GuildMember, MessageFlags, SlashCommandBuilder, time } from "discord.js";
 import Roll from 'roll'
 
 import ICommand from "../types/ICommand";
@@ -52,7 +52,7 @@ class CommandCreateRoll implements ICommand {
         const row = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(buttonRoll)
 
-
+        const secondChannelId = options.get("dice-channel")?.value as string | undefined
         const rollName = options.get("roll-name")?.value as string
         const fullMessage = `**${rollName}**  _[ ${roll} ]_`
         channel.send({
@@ -60,7 +60,7 @@ class CommandCreateRoll implements ICommand {
             components: [row]
         }).then(mensage => {
             const db = new DiceRollsController()
-            db.insert({ guildId, channelId, messageId: mensage.id, roll, rollName, fullMessage })
+            db.insert({ guildId, channelId, messageId: mensage.id, roll, rollName, fullMessage, secondChannelId })
         })
 
 
@@ -72,8 +72,8 @@ class CommandCreateRoll implements ICommand {
         interaction.deleteReply()
     }
 
-    public executeButtons(interaction: ButtonInteraction): void {
-        const { customId, message } = interaction
+    public async executeButtons(interaction: ButtonInteraction): Promise<void> {
+        const { customId, message, member, user } = interaction
         const db = new DiceRollsController()
         const diceRoll = db.get(message.id)
         if (!diceRoll) {
@@ -97,12 +97,21 @@ class CommandCreateRoll implements ICommand {
                     finalMessage.push(...this.makeRolls(rolls))
                 }
 
-                message.edit(`${diceRoll.fullMessage} \n${finalMessage.join("")}`).then(() => {
+                message.edit(`${diceRoll.fullMessage} \nÚltimo resultado: \n${finalMessage.join("")}`).then(() => {
                     interaction.deferUpdate()
-                    setTimeout(() => {
-                        message.edit(diceRoll.fullMessage)
-                    }, 5000)
                 })
+
+                if (diceRoll.secondChannelId) {
+                    const secondChannel = await interaction.guild?.channels.fetch(diceRoll.secondChannelId)
+                    if (!secondChannel || !secondChannel.isTextBased()) {
+                        return
+                    }
+
+                    const nickname = member instanceof GuildMember ? member.nickname ? member.nickname : user.displayName : user.displayName
+                    secondChannel.send({
+                        content: `**${nickname}** rolou ${diceRoll.roll} \n${finalMessage.join("")}`
+                    })
+                }
                 break
         }
     }
