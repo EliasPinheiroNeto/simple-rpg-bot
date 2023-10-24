@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, CommandInteraction, GuildMember, MessageFlags, SlashCommandBuilder, time } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonComponent, ButtonInteraction, ButtonStyle, ChannelType, CommandInteraction, GuildMember, SlashCommandBuilder } from "discord.js";
 import Roll from 'roll'
 
 import ICommand from "../types/ICommand";
@@ -83,8 +83,7 @@ class CommandCreateRoll implements ICommand {
         switch (customId) {
             case "roll":
                 const rolls = diceRoll.roll.replace("#", "").split(/([\+\-]{1}[1-9]+)(?!d)/g).filter(s => s != '')
-
-                const finalMessage = []
+                const finalMessage: string[] = []
 
                 if (diceRoll.roll.includes("#")) {
                     const times = Number.parseInt(rolls[0][0])
@@ -97,20 +96,25 @@ class CommandCreateRoll implements ICommand {
                     finalMessage.push(...this.makeRolls(rolls))
                 }
 
-                message.edit(`${diceRoll.fullMessage} \nÚltimo resultado: \n${finalMessage.join("")}`).then(() => {
+                try {
                     interaction.deferUpdate()
-                })
-
-                if (diceRoll.secondChannelId) {
-                    const secondChannel = await interaction.guild?.channels.fetch(diceRoll.secondChannelId)
-                    if (!secondChannel || !secondChannel.isTextBased()) {
-                        return
-                    }
-
-                    const nickname = member instanceof GuildMember ? member.nickname ? member.nickname : user.displayName : user.displayName
-                    secondChannel.send({
-                        content: `**${nickname}** rolou ${diceRoll.roll} \n${finalMessage.join("")}`
+                    await message.edit({
+                        content: `${diceRoll.fullMessage} \nÚltimo resultado: \n${finalMessage.join("")}`,
                     })
+
+                    if (diceRoll.secondChannelId) {
+                        const secondChannel = await interaction.guild?.channels.fetch(diceRoll.secondChannelId)
+                        if (!secondChannel || !secondChannel.isTextBased()) {
+                            return
+                        }
+
+                        const nickname = member instanceof GuildMember ? member.nickname ? member.nickname : user.displayName : user.displayName
+                        await secondChannel.send({
+                            content: `.\n**${nickname}** rolou ${diceRoll.roll} \n${finalMessage.join("")}`
+                        })
+                    }
+                } catch (err) {
+                    console.log(err)
                 }
                 break
         }
