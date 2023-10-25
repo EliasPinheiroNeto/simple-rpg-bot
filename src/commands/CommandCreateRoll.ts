@@ -25,7 +25,6 @@ class CommandCreateRoll implements ICommand {
                 .setDescription("Canal de texto onde o resultado será duplicado")
                 .addChannelTypes(ChannelType.GuildText)
         })
-    public buttons = ["roll"];
 
     public async execute(interaction: CommandInteraction): Promise<void> {
         const { options, guildId, channelId, channel } = interaction
@@ -73,6 +72,10 @@ class CommandCreateRoll implements ICommand {
     }
 
     public async executeButtons(interaction: ButtonInteraction): Promise<void> {
+        if (!["roll"].includes(interaction.customId)) {
+            return
+        }
+
         const { customId, message, member, user } = interaction
         const db = new DiceRollsController()
         const diceRoll = db.get(message.id)

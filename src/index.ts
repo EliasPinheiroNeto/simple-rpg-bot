@@ -34,19 +34,9 @@ client.on('interactionCreate', interaction => {
 
 
     if (interaction.isButton()) {
-        const command = commands.find(c => {
-            if (!c.buttons) {
-                return false
-            }
-
-            return c.buttons.includes(interaction.customId)
+        commands.forEach(command => {
+            command.executeButtons?.(interaction)
         })
-
-        if (!command || !command.executeButtons) {
-            return
-        }
-
-        command.executeButtons(interaction)
     }
 })
 

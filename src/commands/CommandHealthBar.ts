@@ -14,9 +14,6 @@ class CommandHealthBar implements ICommand {
                 .setRequired(true)
         })
 
-
-    public buttons = ['commandHealth-heal1', 'commandHealth-heal5', 'commandHealth-damage1', 'commandHealth-damage5']
-
     public commandMessages = ['-setMax']
 
     public async execute(interaction: CommandInteraction) {
@@ -62,10 +59,14 @@ class CommandHealthBar implements ICommand {
     }
 
     public async executeButtons(interaction: ButtonInteraction) {
+        if (!['commandHealth-heal1', 'commandHealth-heal5',
+            'commandHealth-damage1', 'commandHealth-damage5'].includes(interaction.customId)) {
+            return
+        }
+
         const { customId } = interaction
 
-        const db = new HealthBarsController
-            ()
+        const db = new HealthBarsController()
         const healthBar = db.getHealthBar(interaction.message.id)
         if (!healthBar) {
             return
