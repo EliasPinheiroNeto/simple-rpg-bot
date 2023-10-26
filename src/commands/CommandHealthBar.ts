@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder, ButtonInteraction } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
 import HealthBarsController from "../database/HealthBarsController";
 import Command from "./Command";
 
@@ -15,8 +15,6 @@ export default new Command({
                 .setRequired(true)
         }),
 
-    // public commandMessages = ['-setMax']
-
     async execute(interaction) {
         const healthMax = interaction.options.get('hp')?.value as number | undefined
         if (!healthMax) {
@@ -24,27 +22,32 @@ export default new Command({
         }
 
         const heal1 = new ButtonBuilder()
-            .setCustomId(`commandHealth-heal1`)
+            .setCustomId(`heal1`)
             .setLabel("+1")
             .setStyle(ButtonStyle.Success)
 
         const heal5 = new ButtonBuilder()
-            .setCustomId(`commandHealth-heal5`)
+            .setCustomId(`heal5`)
             .setLabel("+5")
             .setStyle(ButtonStyle.Success)
 
         const damage1 = new ButtonBuilder()
-            .setCustomId(`commandHealth-damage1`)
+            .setCustomId(`damage1`)
             .setLabel("-1")
             .setStyle(ButtonStyle.Danger)
 
         const damage5 = new ButtonBuilder()
-            .setCustomId(`commandHealth-damage5`)
+            .setCustomId(`damage5`)
             .setLabel("-5")
             .setStyle(ButtonStyle.Danger)
 
+        const config = new ButtonBuilder()
+            .setCustomId('config')
+            .setLabel("⚙️")
+            .setStyle(ButtonStyle.Secondary)
+
         const row = new ActionRowBuilder<ButtonBuilder>()
-            .addComponents(damage5, damage1, heal1, heal5)
+            .addComponents(damage5, damage1, heal1, heal5, config)
 
         interaction.channel?.send({
             content: generateHealthMessage(healthMax),
@@ -60,8 +63,7 @@ export default new Command({
     },
 
     async buttons(interaction: ButtonInteraction) {
-        if (!['commandHealth-heal1', 'commandHealth-heal5',
-            'commandHealth-damage1', 'commandHealth-damage5'].includes(interaction.customId)) {
+        if (!['heal1', 'heal5', 'damage1', 'damage5', 'config'].includes(interaction.customId)) {
             return
         }
 
@@ -74,21 +76,40 @@ export default new Command({
         }
 
         switch (customId) {
-            case `commandHealth-heal1`:
+            case `heal1`:
                 healthBar.healthPoints += 1
                 break;
 
-            case `commandHealth-heal5`:
+            case `heal5`:
                 healthBar.healthPoints += 5
                 break;
 
-            case `commandHealth-damage1`:
+            case `damage1`:
                 healthBar.healthPoints -= 1
                 break;
 
-            case `commandHealth-damage5`:
+            case `damage5`:
                 healthBar.healthPoints -= 5
                 break;
+
+            case 'config':
+                const setMax = new TextInputBuilder()
+                    .setCustomId('setMax')
+                    .setLabel("Novo maximo da barra de vida")
+                    .setStyle(TextInputStyle.Short)
+                    .setPlaceholder("número")
+                    .setRequired(true)
+
+                const row = new ActionRowBuilder<TextInputBuilder>()
+                    .setComponents(setMax)
+
+                const modal = new ModalBuilder()
+                    .setTitle("Configurar barra de vida")
+                    .setCustomId('healthBarModal')
+                    .setComponents(row)
+
+                interaction.showModal(modal)
+                return
         }
 
         await interaction.message.edit(generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
@@ -99,36 +120,40 @@ export default new Command({
             console.log(err)
             return
         }
-    }
+    },
 
-    // public async executeCommandMessages(message: Message) {
-    //     const { content, reference } = message
+    async modals(interaction) {
+        interaction.deferUpdate()
 
-    //     if (!reference || !reference.messageId) {
-    //         return
-    //     }
+        const { customId, message, fields } = interaction
 
-    //     const db = new HealthBarsController
-    //         ()
-    //     const healthBar = db.getHealthBar(reference.messageId)
-    //     if (!healthBar) {
-    //         return
-    //     }
+        if (customId != "healthBarModal" || !message?.id) {
+            return
+        }
 
-    //     if (content.startsWith('-setMax ')) {
-    //         const number = Number.parseInt(content.replace('-setMax ', ''))
-    //         if (isNaN(number)) {
-    //             return
-    //         }
+        const id = message.id
 
-    //         healthBar.healthMax = number
-    //     }
+        const newMax = interaction.fields.fields.get('setMax')?.value
+        if (!newMax) {
+            return
+        }
 
-    //     const referenceMessage = await message.channel.messages.fetch(reference.messageId)
-    //     await referenceMessage.edit(generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
-    //     db.updateHealthBar(healthBar)
-    //     message.delete()
-    // }
+        const newNumber = Number.parseInt(newMax)
+        if (isNaN(newNumber)) {
+            return
+        }
+
+        const db = new HealthBarsController()
+        const healthBar = db.getHealthBar(id)
+        if (!healthBar) {
+            return
+        }
+
+        healthBar.healthMax = newNumber
+        db.updateHealthBar(healthBar)
+
+        interaction.message?.edit(generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
+    },
 })
 
 function generateHealthMessage(healthMax: number, healthPoints: number = healthMax) {

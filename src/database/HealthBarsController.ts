@@ -4,7 +4,7 @@ import path from 'path'
 import IHealthBar from '../types/IHealthBar';
 
 export default class HealthBarsController {
-    private static dbPath = path.resolve("./src/database/database.json")
+    private static dbPath = path.resolve("./src/database/healthBars.json")
     private db: IHealthBar[] = [];
 
     constructor() {
