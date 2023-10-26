@@ -1,14 +1,12 @@
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
-import ICommand from "../types/ICommand";
+import { SlashCommandBuilder } from "discord.js";
+import Command from "./Command";
 
-class CommandPing implements ICommand {
-    public data = new SlashCommandBuilder()
+export default new Command({
+    builder: new SlashCommandBuilder()
         .setName("ping")
-        .setDescription("Replies with Pong!")
+        .setDescription("Reply with Pong!"),
 
-    public execute(interaction: CommandInteraction) {
+    async execute(interaction) {
         interaction.reply("Pong!")
-    }
-}
-
-export default new CommandPing()
+    },
+})

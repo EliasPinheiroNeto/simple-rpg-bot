@@ -4,11 +4,7 @@ import commandHealthBar from './commands/CommandHealthBar'
 import commandPing from './commands/CommandPing'
 import commandCreateRoll from './commands/CommandCreateRoll'
 
-const commands = [
-    commandHealthBar.data,
-    commandPing.data,
-    commandCreateRoll.data
-]
+const commands = [commandPing.builder, commandHealthBar.builder, commandCreateRoll.builder]
 
 const rest = new REST().setToken(process.env.DISCORD_TOKEN)
 

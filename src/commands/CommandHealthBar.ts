@@ -1,10 +1,11 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder, CommandInteraction, ButtonInteraction, Message } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder, ButtonInteraction } from "discord.js";
 import HealthBarsController from "../database/HealthBarsController";
-import ICommand from "../types/ICommand";
+import Command from "./Command";
 
-class CommandHealthBar implements ICommand {
-    public data = new SlashCommandBuilder()
-        .setName("health-bar")
+
+export default new Command({
+    builder: new SlashCommandBuilder()
+        .setName("create-health-bar")
         .setDescription("Creates a simple health bar")
         .addNumberOption(option => {
             return option
@@ -12,11 +13,11 @@ class CommandHealthBar implements ICommand {
                 .setDescription("the full caracter's health")
                 .setMinValue(1)
                 .setRequired(true)
-        })
+        }),
 
-    public commandMessages = ['-setMax']
+    // public commandMessages = ['-setMax']
 
-    public async execute(interaction: CommandInteraction) {
+    async execute(interaction) {
         const healthMax = interaction.options.get('hp')?.value as number | undefined
         if (!healthMax) {
             return
@@ -46,7 +47,7 @@ class CommandHealthBar implements ICommand {
             .addComponents(damage5, damage1, heal1, heal5)
 
         interaction.channel?.send({
-            content: this.generateHealthMessage(healthMax),
+            content: generateHealthMessage(healthMax),
             components: [row],
         }).then((message) => {
             const db = new HealthBarsController()
@@ -56,9 +57,9 @@ class CommandHealthBar implements ICommand {
         await interaction.reply("Criando barra")
         await interaction.deleteReply()
         return
-    }
+    },
 
-    public async executeButtons(interaction: ButtonInteraction) {
+    async buttons(interaction: ButtonInteraction) {
         if (!['commandHealth-heal1', 'commandHealth-heal5',
             'commandHealth-damage1', 'commandHealth-damage5'].includes(interaction.customId)) {
             return
@@ -90,7 +91,7 @@ class CommandHealthBar implements ICommand {
                 break;
         }
 
-        await interaction.message.edit(this.generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
+        await interaction.message.edit(generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
         db.updateHealthBar(healthBar)
         try {
             await interaction.deferUpdate()
@@ -100,65 +101,57 @@ class CommandHealthBar implements ICommand {
         }
     }
 
-    public async executeCommandMessages(message: Message) {
-        const { content, reference } = message
+    // public async executeCommandMessages(message: Message) {
+    //     const { content, reference } = message
 
-        if (!reference || !reference.messageId) {
-            return
+    //     if (!reference || !reference.messageId) {
+    //         return
+    //     }
+
+    //     const db = new HealthBarsController
+    //         ()
+    //     const healthBar = db.getHealthBar(reference.messageId)
+    //     if (!healthBar) {
+    //         return
+    //     }
+
+    //     if (content.startsWith('-setMax ')) {
+    //         const number = Number.parseInt(content.replace('-setMax ', ''))
+    //         if (isNaN(number)) {
+    //             return
+    //         }
+
+    //         healthBar.healthMax = number
+    //     }
+
+    //     const referenceMessage = await message.channel.messages.fetch(reference.messageId)
+    //     await referenceMessage.edit(generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
+    //     db.updateHealthBar(healthBar)
+    //     message.delete()
+    // }
+})
+
+function generateHealthMessage(healthMax: number, healthPoints: number = healthMax) {
+    const percent = (healthPoints / healthMax) * 10
+    const healthMessage = []
+    for (let i = 1; i <= 10; i++) {
+        if (i == 1 && healthPoints >= 1) {
+            healthMessage.push("🟩")
+            continue
         }
 
-        const db = new HealthBarsController
-            ()
-        const healthBar = db.getHealthBar(reference.messageId)
-        if (!healthBar) {
-            return
+        if (10 - i < percent - 10) {
+            healthMessage.push("🟨")
+            continue
         }
 
-        if (content.startsWith('-setMax ')) {
-            const number = Number.parseInt(content.replace('-setMax ', ''))
-            if (isNaN(number)) {
-                return
-            }
-
-            healthBar.healthMax = number
+        if (i <= percent) {
+            healthMessage.push("🟩")
+            continue
         }
 
-        const referenceMessage = await message.channel.messages.fetch(reference.messageId)
-        await referenceMessage.edit(this.generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
-        db.updateHealthBar(healthBar)
-        message.delete()
+        healthMessage.push("🟥")
     }
 
-    public onDelete(message: Message) {
-        const db = new HealthBarsController
-            ()
-        db.deleteHealthBar(message.id)
-    }
-
-    private generateHealthMessage(healthMax: number, healthPoints: number = healthMax) {
-        const percent = (healthPoints / healthMax) * 10
-        const healthMessage = []
-        for (let i = 1; i <= 10; i++) {
-            if (i == 1 && healthPoints >= 1) {
-                healthMessage.push("🟩")
-                continue
-            }
-
-            if (10 - i < percent - 10) {
-                healthMessage.push("🟨")
-                continue
-            }
-
-            if (i <= percent) {
-                healthMessage.push("🟩")
-                continue
-            }
-
-            healthMessage.push("🟥")
-        }
-
-        return `Pontos de vida: [${healthPoints} / ${healthMax}] \n${healthMessage.join("")}`
-    }
+    return `Pontos de vida: [${healthPoints} / ${healthMax}] \n${healthMessage.join("")}`
 }
-
-export default new CommandHealthBar()

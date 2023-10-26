@@ -1,11 +1,11 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonComponent, ButtonInteraction, ButtonStyle, ChannelType, CommandInteraction, GuildMember, SlashCommandBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, GuildMember, SlashCommandBuilder } from "discord.js";
 import Roll from 'roll'
 
-import ICommand from "../types/ICommand";
 import DiceRollsController from "../database/DiceRollsController";
+import Command from "./Command";
 
-class CommandCreateRoll implements ICommand {
-    public data = new SlashCommandBuilder()
+export default new Command({
+    builder: new SlashCommandBuilder()
         .setName("create-roll")
         .setDescription("Cria uma nova rolagem de dados")
         .addStringOption(option => {
@@ -24,9 +24,9 @@ class CommandCreateRoll implements ICommand {
                 .setName("dice-channel")
                 .setDescription("Canal de texto onde o resultado será duplicado")
                 .addChannelTypes(ChannelType.GuildText)
-        })
+        }),
 
-    public async execute(interaction: CommandInteraction): Promise<void> {
+    async execute(interaction): Promise<void> {
         const { options, guildId, channelId, channel } = interaction
         const roller = new Roll()
         const rollInput = options.get("roll")?.value
@@ -69,9 +69,9 @@ class CommandCreateRoll implements ICommand {
         })
 
         interaction.deleteReply()
-    }
+    },
 
-    public async executeButtons(interaction: ButtonInteraction): Promise<void> {
+    async buttons(interaction): Promise<void> {
         if (!["roll"].includes(interaction.customId)) {
             return
         }
@@ -93,10 +93,10 @@ class CommandCreateRoll implements ICommand {
                     rolls[0] = rolls[0].replace(times.toString(), '1')
 
                     for (let i = 0; i < times; i++) {
-                        finalMessage.push(...this.makeRolls(rolls))
+                        finalMessage.push(...makeRolls(rolls))
                     }
                 } else {
-                    finalMessage.push(...this.makeRolls(rolls))
+                    finalMessage.push(...makeRolls(rolls))
                 }
 
                 try {
@@ -122,31 +122,29 @@ class CommandCreateRoll implements ICommand {
                 break
         }
     }
+})
 
-    private makeRolls(rolls: string[]) {
-        const roller = new Roll()
-        let result = 0;
-        const string: string[] = []
+function makeRolls(rolls: string[]) {
+    const roller = new Roll()
+    let result = 0;
+    const string: string[] = []
 
-        rolls.forEach(r => {
-            if (r.includes("d")) {
-                const rResult = roller.roll(r.replace(/^[\-\+]/g, ""))
-                result += rResult.result
+    rolls.forEach(r => {
+        if (r.includes("d")) {
+            const rResult = roller.roll(r.replace(/^[\-\+]/g, ""))
+            result += rResult.result
 
-                string.push(`${/^[\-\+]/g.test(r) ? r[0] : ''} [${rResult.rolled}] ${r.replace(/^[\-\+]/g, "")} `)
-                return
-            }
+            string.push(`${/^[\-\+]/g.test(r) ? r[0] : ''} [${rResult.rolled}] ${r.replace(/^[\-\+]/g, "")} `)
+            return
+        }
 
-            const rBonus = Number.parseInt(r)
-            result += rBonus
-            string.push(`${/^[\-\+]/g.test(r) ? r[0] : ''} ${Math.abs(Number.parseInt(r))} `)
-        })
+        const rBonus = Number.parseInt(r)
+        result += rBonus
+        string.push(`${/^[\-\+]/g.test(r) ? r[0] : ''} ${Math.abs(Number.parseInt(r))} `)
+    })
 
-        string.unshift(`\` ${result} \` ⟵ `)
-        string.push('\n')
+    string.unshift(`\` ${result} \` ⟵ `)
+    string.push('\n')
 
-        return string
-    }
+    return string
 }
-
-export default new CommandCreateRoll()
