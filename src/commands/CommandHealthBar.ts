@@ -53,8 +53,17 @@ export default new Command({
             content: generateHealthMessage(healthMax),
             components: [row],
         }).then((message) => {
+            if (!message.guildId) {
+                return
+            }
             const db = new HealthBarsController()
-            db.insert({ healthMax, healthPoints: healthMax, messageId: message.id })
+            db.insert({
+                healthMax,
+                healthPoints: healthMax,
+                messageId: message.id,
+                channelId: message.channelId,
+                guildId: message.guildId
+            })
         })
 
         await interaction.reply("Criando barra")
