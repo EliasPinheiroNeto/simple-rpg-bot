@@ -32,4 +32,18 @@ export default class DatabaseController<T extends { messageId: string }> {
             return entry.messageId == messageId
         })
     }
+
+    public update(object: T) {
+        const index = this.db.findIndex(entry => {
+            return entry.messageId == object.messageId
+        })
+
+        console.log(index)
+        if (index == -1) {
+            return
+        }
+
+        Object.assign(this.db[index], object)
+        this.save()
+    }
 }

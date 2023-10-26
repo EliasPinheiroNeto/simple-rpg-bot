@@ -54,7 +54,7 @@ export default new Command({
             components: [row],
         }).then((message) => {
             const db = new HealthBarsController()
-            db.createHealthBar(healthMax, message.id)
+            db.insert({ healthMax, healthPoints: healthMax, messageId: message.id })
         })
 
         await interaction.reply("Criando barra")
@@ -70,7 +70,7 @@ export default new Command({
         const { customId } = interaction
 
         const db = new HealthBarsController()
-        const healthBar = db.getHealthBar(interaction.message.id)
+        const healthBar = db.get(interaction.message.id)
         if (!healthBar) {
             return
         }
@@ -113,7 +113,7 @@ export default new Command({
         }
 
         await interaction.message.edit(generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
-        db.updateHealthBar(healthBar)
+        db.update(healthBar)
         try {
             await interaction.deferUpdate()
         } catch (err) {
@@ -144,13 +144,13 @@ export default new Command({
         }
 
         const db = new HealthBarsController()
-        const healthBar = db.getHealthBar(id)
+        const healthBar = db.get(id)
         if (!healthBar) {
             return
         }
 
         healthBar.healthMax = newNumber
-        db.updateHealthBar(healthBar)
+        db.update(healthBar)
 
         interaction.message?.edit(generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
     },
