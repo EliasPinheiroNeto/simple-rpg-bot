@@ -11,6 +11,10 @@ const commands: Command[] = [commandPing, commandHealthBar, commandCreateRoll]
 
 client.once("ready", c => {
     console.log(`Ready! Logged in as ${c.user.tag}`)
+
+    commands.forEach(command => {
+        command.verifyData?.(client.guilds)
+    })
 })
 
 client.on('interactionCreate', interaction => {

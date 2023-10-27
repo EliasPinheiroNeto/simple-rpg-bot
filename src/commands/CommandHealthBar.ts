@@ -168,6 +168,32 @@ export default new Command({
         const db = new HealthBarsController()
         return db.delete(messageId)
     },
+
+    async verifyData(clientGuilds) {
+        const db = new HealthBarsController()
+        const data = db.getData()
+
+        const newData = data.filter(bar => {
+            const guild = clientGuilds.cache.get(bar.guildId)
+            if (!guild) {
+                return false
+            }
+
+            const channel = guild.channels.cache.get(bar.channelId)
+            if (!channel || !channel.isTextBased()) {
+                return false
+            }
+
+            const message = channel.messages.cache.get(bar.messageId)
+            if (!message) {
+                return false
+            }
+
+            return true
+        })
+
+        db.setData(newData)
+    },
 })
 
 function generateHealthMessage(healthMax: number, healthPoints: number = healthMax) {

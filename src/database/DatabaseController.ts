@@ -2,7 +2,7 @@ import fs from 'fs'
 
 export default class DatabaseController<T extends { messageId: string }> {
     private dbPath: string
-    protected db: Array<T> = []
+    protected db: T[] = []
     constructor(dbPath: string) {
         this.dbPath = dbPath
         this.onCreate();
@@ -20,6 +20,15 @@ export default class DatabaseController<T extends { messageId: string }> {
 
     protected save() {
         fs.writeFileSync(this.dbPath, JSON.stringify(this.db))
+    }
+
+    public getData(): T[] {
+        return this.db
+    }
+
+    public setData(data: T[]): void {
+        this.db = data
+        this.save()
     }
 
     public insert(object: T) {
