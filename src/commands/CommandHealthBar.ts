@@ -163,6 +163,11 @@ export default new Command({
 
         interaction.message?.edit(generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
     },
+
+    async onDelete(messageId): Promise<boolean> {
+        const db = new HealthBarsController()
+        return db.delete(messageId)
+    },
 })
 
 function generateHealthMessage(healthMax: number, healthPoints: number = healthMax) {

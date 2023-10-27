@@ -33,4 +33,14 @@ client.on('interactionCreate', interaction => {
     }
 })
 
+client.on('messageDelete', message => {
+    if (!(message.author?.id == client.user?.id)) {
+        return
+    }
+
+    commands.forEach(command => {
+        command.onDelete?.(message.id)
+    })
+})
+
 client.login(process.env.DISCORD_TOKEN)

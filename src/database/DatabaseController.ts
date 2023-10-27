@@ -46,4 +46,18 @@ export default class DatabaseController<T extends { messageId: string }> {
         Object.assign(this.db[index], object)
         this.save()
     }
+
+    public delete(messageId: string): boolean {
+        const index = this.db.findIndex(entry => {
+            return entry.messageId == messageId
+        })
+
+        if (index == -1) {
+            return false
+        }
+
+        this.db.splice(index, 1)
+        this.save()
+        return true
+    }
 }

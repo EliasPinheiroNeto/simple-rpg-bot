@@ -1,4 +1,4 @@
-import { ButtonInteraction, CommandInteraction, ModalSubmitInteraction, SlashCommandBuilder } from "discord.js";
+import { ButtonInteraction, CommandInteraction, Message, ModalSubmitInteraction, SlashCommandBuilder } from "discord.js";
 
 export default class Command {
     // O Omit retorna o tipo escolhido, retirando os atributos ou métodos escolhidos
@@ -9,11 +9,13 @@ export default class Command {
     public async execute(interaction: CommandInteraction): Promise<void> { }
     public async buttons?(interaction: ButtonInteraction): Promise<void> { }
     public async modals?(interaction: ModalSubmitInteraction): Promise<void> { }
+    public async onDelete?(messageId: string): Promise<boolean> { return false }
 
     constructor(command: Command) {
         this.builder = command.builder
         this.execute = command.execute
         this.buttons = command.buttons
         this.modals = command.modals
+        this.onDelete = command.onDelete
     }
 }

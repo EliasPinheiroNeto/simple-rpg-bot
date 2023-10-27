@@ -121,7 +121,12 @@ export default new Command({
                 }
                 break
         }
-    }
+    },
+
+    async onDelete(messageId): Promise<boolean> {
+        const db = new DiceRollsController()
+        return db.delete(messageId)
+    },
 })
 
 function makeRolls(rolls: string[]) {
