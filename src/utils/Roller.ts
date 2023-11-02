@@ -18,17 +18,16 @@ export default class Roller {
     private roll: IRoll
 
     constructor(expression: string) {
-        this.input = Roller.validate(expression)
+        this.input = Roller.validate(expression.replace(/\s/g, "").toLocaleLowerCase())
 
         this.roll = this.interplater()
         this.roller()
     }
 
     public static validate(expression: string): string {
-
-        const times = expression.toLocaleLowerCase().match(new RegExp(/\d+#/g))?.[0]
-        const dices = expression.toLocaleLowerCase().match(new RegExp(/(\+|\-|)(\d+|)d\d+/g))
-        const bonus = expression.toLocaleLowerCase().match(new RegExp(/(\+|\-)\d+(?!d|\d)/g))
+        const times = expression.match(new RegExp(/\d+#/g))?.[0]
+        const dices = expression.match(new RegExp(/(\+|\-|)(\d+|)d\d+/g))
+        const bonus = expression.match(new RegExp(/(\+|\-)\d+(?!d|\d)/g))
 
         if (!dices) {
             return ''
