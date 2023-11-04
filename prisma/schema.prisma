@@ -20,7 +20,7 @@ model Guild {
 model TextChannel {
   id       String     @id
   guildId  String
-  guild    Guild      @relation(fields: [guildId], references: [id])
+  guild    Guild      @relation(fields: [guildId], references: [id], onDelete: Cascade)
   Message  Message[]
   DiceRoll DiceRoll[]
 
@@ -30,7 +30,7 @@ model TextChannel {
 model Message {
   id        String      @id
   channelId String
-  channel   TextChannel @relation(fields: [channelId], references: [id])
+  channel   TextChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
   HealthBar HealthBar?
   DiceRoll  DiceRoll?
 
@@ -39,7 +39,7 @@ model Message {
 
 model HealthBar {
   messageId    String  @unique
-  message      Message @relation(fields: [messageId], references: [id])
+  message      Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
   healthMax    Int
   healthPoints Int
 
@@ -48,12 +48,12 @@ model HealthBar {
 
 model DiceRoll {
   messageId       String       @unique
-  message         Message      @relation(fields: [messageId], references: [id])
+  message         Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
   roll            String
   rollName        String
   rollDescription String?
   outputChannelId String?
-  outputChannel   TextChannel? @relation(fields: [outputChannelId], references: [id])
+  outputChannel   TextChannel? @relation(fields: [outputChannelId], references: [id], onDelete: SetNull)
 
   @@map("dice_rolls")
 }
