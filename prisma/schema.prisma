@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Guild {
+  id          String        @id
+  TextChannel TextChannel[]
+
+  @@map("guilds")
+}
+
+model TextChannel {
+  id       String     @id
+  guildId  String
+  guild    Guild      @relation(fields: [guildId], references: [id])
+  Message  Message[]
+  DiceRoll DiceRoll[]
+
+  @@map("text_channels")
+}
+
+model Message {
+  id        String      @id
+  channelId String
+  channel   TextChannel @relation(fields: [channelId], references: [id])
+  HealthBar HealthBar?
+  DiceRoll  DiceRoll?
+
+  @@map("messages")
+}
+
+model HealthBar {
+  messageId    String  @unique
+  message      Message @relation(fields: [messageId], references: [id])
+  healthMax    Int
+  healthPoints Int
+
+  @@map("health_bars")
+}
+
+model DiceRoll {
+  messageId       String       @unique
+  message         Message      @relation(fields: [messageId], references: [id])
+  roll            String
+  rollName        String
+  rollDescription String
+  outputChannelId String?
+  outputChannel   TextChannel? @relation(fields: [outputChannelId], references: [id])
+
+  @@map("dice_rolls")
+}
