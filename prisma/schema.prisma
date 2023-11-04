@@ -51,7 +51,7 @@ model DiceRoll {
   message         Message      @relation(fields: [messageId], references: [id])
   roll            String
   rollName        String
-  rollDescription String
+  rollDescription String?
   outputChannelId String?
   outputChannel   TextChannel? @relation(fields: [outputChannelId], references: [id])
 
