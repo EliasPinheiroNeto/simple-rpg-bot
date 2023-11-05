@@ -27,7 +27,7 @@ export default new Command({
                 .setName("dice-channel")
                 .setDescription("Canal de texto onde o resultado será duplicado")
                 .addChannelTypes(ChannelType.GuildText)
-        }),
+        }).toJSON(),
 
     async execute(interaction): Promise<void> {
         const { options, channel } = interaction

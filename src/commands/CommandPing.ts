@@ -4,9 +4,10 @@ import Command from "./Command";
 export default new Command({
     builder: new SlashCommandBuilder()
         .setName("ping")
-        .setDescription("Reply with Pong!"),
+        .setDescription("Comando de teste do bot, responde com Pong")
+        .toJSON(),
 
     async execute(interaction) {
-        interaction.reply("Pong!")
+        await interaction.reply("Pong!")
     },
 })

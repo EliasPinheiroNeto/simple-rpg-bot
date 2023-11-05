@@ -1,8 +1,10 @@
 declare global {
     namespace NodeJS {
         interface ProcessEnv {
-            DISCORD_TOKEN: string,
+            DISCORD_TOKEN: string
             APPLICATION_ID: string
+
+            DATABASE_URL: string
         }
     }
 }
