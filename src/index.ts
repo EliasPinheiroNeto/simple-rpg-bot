@@ -3,11 +3,11 @@ import { Client } from 'discord.js'
 
 import ICommand from './types/ICommand'
 import CommandHealthBar from './commands/CommandHealthBar'
-// import commandPing from './commands/CommandPing'
-// import commandCreateRoll from './commands/CommandCreateRoll'
+import CommandCreateRoll from './commands/CommandCreateRoll'
+import CommandPing from './commands/CommandPing'
 
 const client = new Client({ intents: ["Guilds", "GuildMessages", "MessageContent"] })
-const commands: ICommand[] = [new CommandHealthBar()]
+const commands: ICommand[] = [new CommandHealthBar(), new CommandCreateRoll(), new CommandPing()]
 
 client.once("ready", c => {
     console.log(`Ready! Logged in as ${c.user.tag}`)
@@ -30,8 +30,8 @@ client.on('interactionCreate', interaction => {
     }
 
     if (interaction.isButton()) {
-        commands.some(async command => {
-            return await command.buttons?.(interaction)
+        commands.forEach(async command => {
+            await command.buttons?.(interaction)
         })
     }
 

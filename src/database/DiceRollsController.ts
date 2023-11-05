@@ -9,6 +9,10 @@ export default class DiceRollsController extends DatabaseController {
     }
 
     public async insert(diceRoll: IDiceRoll, message: Message) {
+        if (!message.guildId) {
+            console.log("Alguma coisa acontedeu de errado")
+            return
+        }
 
         const dbChannel = await this.prisma.textChannel.findUnique({
             where: {
@@ -18,11 +22,6 @@ export default class DiceRollsController extends DatabaseController {
 
         // Cria o canal da mensagem no banco se necessario
         if (!dbChannel) {
-            if (!message.guildId) {
-                console.log("Alguma coisa acontedeu de errado")
-                return
-            }
-
             const dbGuild = await this.prisma.guild.findUnique({
                 where: {
                     id: message.guildId
@@ -52,6 +51,23 @@ export default class DiceRollsController extends DatabaseController {
                 channelId: message.channelId
             }
         })
+
+        if (diceRoll.outputChannelId) {
+            const dbOutputChannel = await this.prisma.textChannel.findUnique({
+                where: {
+                    id: diceRoll.outputChannelId
+                }
+            })
+
+            if (!dbOutputChannel) {
+                await this.prisma.textChannel.create({
+                    data: {
+                        id: diceRoll.outputChannelId,
+                        guildId: message.guildId
+                    }
+                })
+            }
+        }
 
         // Criando o DiceRoll no banco com os relacionamentos
         await this.prisma.diceRoll.create({

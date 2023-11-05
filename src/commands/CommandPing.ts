@@ -1,13 +1,20 @@
-import { SlashCommandBuilder } from "discord.js";
-import Command from "./Command";
+import { CacheType, ChatInputCommandInteraction, RESTPostAPIChatInputApplicationCommandsJSONBody, SlashCommandBuilder } from "discord.js";
+import ICommand from "../types/ICommand";
 
-export default new Command({
-    builder: new SlashCommandBuilder()
-        .setName("ping")
-        .setDescription("Comando de teste do bot, responde com Pong")
-        .toJSON(),
+export default class implements ICommand {
+    public name: string;
+    public builder: RESTPostAPIChatInputApplicationCommandsJSONBody;
 
-    async execute(interaction) {
+    constructor() {
+        this.name = "ping"
+
+        this.builder = new SlashCommandBuilder()
+            .setName(this.name)
+            .setDescription("Comando de teste do bot, responde com Pong")
+            .toJSON()
+    }
+
+    public async execute(interaction: ChatInputCommandInteraction<CacheType>) {
         await interaction.reply("Pong!")
-    },
-})
+    }
+}
