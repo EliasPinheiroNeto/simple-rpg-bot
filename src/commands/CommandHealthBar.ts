@@ -53,17 +53,12 @@ export default new Command({
             content: generateHealthMessage(healthMax),
             components: [row],
         }).then((message) => {
-            if (!message.guildId) {
-                return
-            }
             const db = new HealthBarsController()
-            // db.insert({
-            //     healthMax,
-            //     healthPoints: healthMax,
-            //     messageId: message.id,
-            //     channelId: message.channelId,
-            //     guildId: message.guildId
-            // })
+            db.insert({
+                healthMax,
+                healthPoints: healthMax,
+                messageId: message.id,
+            }, message)
         })
 
         await interaction.reply("Criando barra")
@@ -79,8 +74,7 @@ export default new Command({
         const { customId } = interaction
 
         const db = new HealthBarsController()
-        const healthBar = {} as any
-        // db.get(interaction.message.id)
+        const healthBar = await db.get(interaction.message.id)
         if (!healthBar) {
             return
         }
@@ -123,7 +117,7 @@ export default new Command({
         }
 
         await interaction.message.edit(generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
-        // db.update(healthBar)
+        await db.update(healthBar)
         try {
             await interaction.deferUpdate()
         } catch (err) {
@@ -141,9 +135,7 @@ export default new Command({
             return
         }
 
-        const id = message.id
-
-        const newMax = interaction.fields.fields.get('setMax')?.value
+        const newMax = fields.fields.get('setMax')?.value
         if (!newMax) {
             return
         }
@@ -154,48 +146,26 @@ export default new Command({
         }
 
         const db = new HealthBarsController()
-        const healthBar = {} as any
-        // db.get(id)
+        const healthBar = await db.get(message.id)
         if (!healthBar) {
             return
         }
 
         healthBar.healthMax = newNumber
-        // db.update(healthBar)
+        await db.update(healthBar)
 
         interaction.message?.edit(generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
     },
 
-    // async onDelete(messageId): Promise<boolean> {
-    //     const db = new HealthBarsController()
-    //     return db.delete(messageId)
-    // },
+    async onDelete(messageId) {
+        const db = new HealthBarsController()
+        db.delete(messageId)
+    },
 
-    // async verifyData(clientGuilds) {
-    //     const db = new HealthBarsController()
-    //     const data = db.getData()
-
-    //     const newData = data.filter(bar => {
-    //         const guild = clientGuilds.cache.get(bar.guildId)
-    //         if (!guild) {
-    //             return false
-    //         }
-
-    //         const channel = guild.channels.cache.get(bar.channelId)
-    //         if (!channel || !channel.isTextBased()) {
-    //             return false
-    //         }
-
-    //         const message = channel.messages.cache.get(bar.messageId)
-    //         if (!message) {
-    //             return false
-    //         }
-
-    //         return true
-    //     })
-
-    //     db.setData(newData)
-    // },
+    async verifyData(clientGuilds) {
+        const db = new HealthBarsController()
+        await db.checkData(clientGuilds.cache)
+    },
 })
 
 function generateHealthMessage(healthMax: number, healthPoints: number = healthMax) {
