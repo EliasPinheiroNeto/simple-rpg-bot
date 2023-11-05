@@ -18,8 +18,11 @@ export default new Command({
                 .setName("roll")
                 .setDescription("Rolagem de dados")
                 .setRequired(true)
-        })
-        .addChannelOption(option => {
+        }).addStringOption(option => {
+            return option
+                .setName("roll-description")
+                .setDescription("Detalhes sobre a rolagem")
+        }).addChannelOption(option => {
             return option
                 .setName("dice-channel")
                 .setDescription("Canal de texto onde o resultado será duplicado")
@@ -27,10 +30,10 @@ export default new Command({
         }),
 
     async execute(interaction): Promise<void> {
-        const { options, guildId, channelId, channel } = interaction
+        const { options, channel } = interaction
         const rollInput = options.get("roll")?.value
 
-        if (!guildId || !channelId || !channel || !rollInput || typeof rollInput != "string") {
+        if (!channel || !rollInput || typeof rollInput != "string") {
             interaction.reply({ content: "Ocorreu algum erro", ephemeral: true })
             return
         }
@@ -50,15 +53,18 @@ export default new Command({
         const row = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(buttonRoll)
 
-        const secondChannelId = options.get("dice-channel")?.value as string | undefined
+        const outputChannelId = options.get("dice-channel")?.value as string | undefined
+        const rollDescription = options.get("roll-description")?.value as string | undefined
         const rollName = options.get("roll-name")?.value as string
-        const fullMessage = `**${rollName}**  _[ ${roll.input} ]_`
+
         channel.send({
-            content: fullMessage,
+            content: `**${rollName}**  _[ ${roll.input} ]_ ${rollDescription ? `\n_${rollDescription}_` : ''}`,
             components: [row]
-        }).then(mensage => {
+        }).then(message => {
             const db = new DiceRollsController()
-            db.insert({ guildId, channelId, messageId: mensage.id, roll: roll.input, rollName, fullMessage, secondChannelId })
+            db.insert({
+                messageId: message.id, roll: roll.input, rollName, outputChannelId, rollDescription
+            }, message)
         })
 
 
@@ -77,7 +83,7 @@ export default new Command({
 
         const { customId, message, member, user } = interaction
         const db = new DiceRollsController()
-        const diceRoll = db.get(message.id)
+        const diceRoll = await db.get(message.id)
         if (!diceRoll) {
             return
         }
@@ -89,18 +95,20 @@ export default new Command({
                 try {
                     interaction.deferUpdate()
                     await message.edit({
-                        content: `${diceRoll.fullMessage} \nÚltimo resultado: \n${roll.expressionResults.join('\n')}`,
+                        content: ` ** ${diceRoll.rollName} ** _[${diceRoll.roll} ]_ 
+                        ${diceRoll.rollDescription ? `_${diceRoll.rollDescription}_` : ''} 
+                        Último resultado: \n${roll.expressionResults.join('\n')}`,
                     })
 
-                    if (diceRoll.secondChannelId) {
-                        const secondChannel = await interaction.guild?.channels.fetch(diceRoll.secondChannelId)
+                    if (diceRoll.outputChannelId) {
+                        const secondChannel = await interaction.guild?.channels.fetch(diceRoll.outputChannelId)
                         if (!secondChannel || !secondChannel.isTextBased()) {
                             return
                         }
 
                         const nickname = member instanceof GuildMember ? member.nickname ? member.nickname : user.displayName : user.displayName
                         await secondChannel.send({
-                            content: `.\n**${nickname}** rolou ${diceRoll.roll} \n${roll.expressionResults.join('\n')}`
+                            content: `**${nickname}** rolou ${diceRoll.roll} \n${roll.expressionResults.join('\n')}`
                         })
                     }
                 } catch (err) {
@@ -110,34 +118,14 @@ export default new Command({
         }
     },
 
-    async onDelete(messageId): Promise<boolean> {
+    async onDelete(messageId) {
         const db = new DiceRollsController()
-        return db.delete(messageId)
+        db.delete(messageId)
     },
 
     async verifyData(clientGuilds) {
-        const db = new DiceRollsController
-        const data = db.getData()
+        const db = new DiceRollsController()
 
-        const newData = data.filter(bar => {
-            const guild = clientGuilds.cache.get(bar.guildId)
-            if (!guild) {
-                return false
-            }
-
-            const channel = guild.channels.cache.get(bar.channelId)
-            if (!channel || !channel.isTextBased()) {
-                return false
-            }
-
-            const message = channel.messages.cache.get(bar.messageId)
-            if (!message) {
-                return false
-            }
-
-            return true
-        })
-
-        db.setData(newData)
+        db.checkData(clientGuilds.cache)
     },
 })

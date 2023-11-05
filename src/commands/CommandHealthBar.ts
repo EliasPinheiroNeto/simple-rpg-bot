@@ -57,13 +57,13 @@ export default new Command({
                 return
             }
             const db = new HealthBarsController()
-            db.insert({
-                healthMax,
-                healthPoints: healthMax,
-                messageId: message.id,
-                channelId: message.channelId,
-                guildId: message.guildId
-            })
+            // db.insert({
+            //     healthMax,
+            //     healthPoints: healthMax,
+            //     messageId: message.id,
+            //     channelId: message.channelId,
+            //     guildId: message.guildId
+            // })
         })
 
         await interaction.reply("Criando barra")
@@ -79,7 +79,8 @@ export default new Command({
         const { customId } = interaction
 
         const db = new HealthBarsController()
-        const healthBar = db.get(interaction.message.id)
+        const healthBar = {} as any
+        // db.get(interaction.message.id)
         if (!healthBar) {
             return
         }
@@ -122,7 +123,7 @@ export default new Command({
         }
 
         await interaction.message.edit(generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
-        db.update(healthBar)
+        // db.update(healthBar)
         try {
             await interaction.deferUpdate()
         } catch (err) {
@@ -153,47 +154,48 @@ export default new Command({
         }
 
         const db = new HealthBarsController()
-        const healthBar = db.get(id)
+        const healthBar = {} as any
+        // db.get(id)
         if (!healthBar) {
             return
         }
 
         healthBar.healthMax = newNumber
-        db.update(healthBar)
+        // db.update(healthBar)
 
         interaction.message?.edit(generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
     },
 
-    async onDelete(messageId): Promise<boolean> {
-        const db = new HealthBarsController()
-        return db.delete(messageId)
-    },
+    // async onDelete(messageId): Promise<boolean> {
+    //     const db = new HealthBarsController()
+    //     return db.delete(messageId)
+    // },
 
-    async verifyData(clientGuilds) {
-        const db = new HealthBarsController()
-        const data = db.getData()
+    // async verifyData(clientGuilds) {
+    //     const db = new HealthBarsController()
+    //     const data = db.getData()
 
-        const newData = data.filter(bar => {
-            const guild = clientGuilds.cache.get(bar.guildId)
-            if (!guild) {
-                return false
-            }
+    //     const newData = data.filter(bar => {
+    //         const guild = clientGuilds.cache.get(bar.guildId)
+    //         if (!guild) {
+    //             return false
+    //         }
 
-            const channel = guild.channels.cache.get(bar.channelId)
-            if (!channel || !channel.isTextBased()) {
-                return false
-            }
+    //         const channel = guild.channels.cache.get(bar.channelId)
+    //         if (!channel || !channel.isTextBased()) {
+    //             return false
+    //         }
 
-            const message = channel.messages.cache.get(bar.messageId)
-            if (!message) {
-                return false
-            }
+    //         const message = channel.messages.cache.get(bar.messageId)
+    //         if (!message) {
+    //             return false
+    //         }
 
-            return true
-        })
+    //         return true
+    //     })
 
-        db.setData(newData)
-    },
+    //     db.setData(newData)
+    // },
 })
 
 function generateHealthMessage(healthMax: number, healthPoints: number = healthMax) {
