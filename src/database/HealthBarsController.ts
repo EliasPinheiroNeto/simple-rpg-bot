@@ -98,6 +98,7 @@ export default class HealthBarsController extends DatabaseController {
     }
 
     public async checkData(clientGuilds: Collection<string, Guild>) {
+        //Verificar bandco de dados não deve estar nessas classes de comando, pois estou repetiondo código desnecessário
         const guildsId = clientGuilds.map(guild => guild.id)
         await this.prisma.guild.deleteMany({
             where: {
@@ -107,6 +108,7 @@ export default class HealthBarsController extends DatabaseController {
             }
         })
 
+        //Aparentemente não ta filtrando os canias de texto
         const channels = clientGuilds.map((guild) => {
             return guild.channels.cache.filter(channel => {
                 if (channel.isTextBased()) {
@@ -129,24 +131,31 @@ export default class HealthBarsController extends DatabaseController {
         const dbMessages = await this.prisma.message.findMany()
 
         dbMessages.forEach(async dbMessage => {
-            const deleteMessage = channels.some(async channel => {
-                if (!channel.isTextBased()) {
-                    return false
-                }
-
-                const message = await channel.messages.fetch(dbMessage.id)
-                if (message) {
-                    return true
-                }
-                return false
-            })
-
-            if (deleteMessage) {
+            const channel = channels.find(c => c.id == dbMessage.channelId)
+            if (!channel || !channel.isTextBased()) {
                 await this.prisma.message.delete({
                     where: {
                         id: dbMessage.id
                     }
                 })
+
+                return
+            }
+
+            const message = await channel.messages.fetch(dbMessage.id).then(m => {
+                return m
+            }).catch(() => {
+                return undefined
+            })
+
+            if (!message) {
+                await this.prisma.message.delete({
+                    where: {
+                        id: dbMessage.id
+                    }
+                })
+
+                return
             }
         })
     }
