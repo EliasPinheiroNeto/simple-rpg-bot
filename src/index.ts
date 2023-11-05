@@ -6,6 +6,7 @@ import CommandHealthBar from './commands/CommandHealthBar'
 import CommandCreateRoll from './commands/CommandCreateRoll'
 import CommandPing from './commands/CommandPing'
 import prisma from './database/prisma'
+import DatabaseController from './database/DatabaseController'
 
 const client = new Client({ intents: ["Guilds", "GuildMessages", "MessageContent"] })
 const commands: ICommand[] = [new CommandHealthBar(), new CommandCreateRoll(), new CommandPing()]
@@ -13,9 +14,8 @@ const commands: ICommand[] = [new CommandHealthBar(), new CommandCreateRoll(), n
 client.once("ready", c => {
     console.log(`Ready! Logged in as ${c.user.tag}`)
 
-    // commands.forEach(command => {
-    //     command.verifyData?.(client.guilds)
-    // })
+    const db = new DatabaseController()
+    db.checkData(client.guilds.cache)
 })
 
 client.on('interactionCreate', interaction => {
