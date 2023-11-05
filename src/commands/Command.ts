@@ -1,4 +1,4 @@
-import { ButtonInteraction, CommandInteraction, GuildManager, Message, ModalSubmitInteraction, SlashCommandBuilder } from "discord.js";
+import { ButtonInteraction, CommandInteraction, GuildManager, ModalSubmitInteraction, SlashCommandBuilder } from "discord.js";
 
 export default class Command {
     // O Omit retorna o tipo escolhido, retirando os atributos ou métodos escolhidos

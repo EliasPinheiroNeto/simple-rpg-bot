@@ -1,4 +1,4 @@
-import { Collection, Guild, GuildBasedChannel, Message, TextBasedChannel } from "discord.js";
+import { Collection, Guild, Message } from "discord.js";
 
 import DatabaseController from "./DatabaseController";
 import IDiceRoll from "../types/IDiceRoll";
@@ -46,7 +46,7 @@ export default class DiceRollsController extends DatabaseController {
             })
         }
 
-        const m = await this.prisma.message.create({
+        await this.prisma.message.create({
             data: {
                 id: message.id,
                 channelId: message.channelId
@@ -54,11 +54,9 @@ export default class DiceRollsController extends DatabaseController {
         })
 
         // Criando o DiceRoll no banco com os relacionamentos
-        const d = await this.prisma.diceRoll.create({
+        await this.prisma.diceRoll.create({
             data: diceRoll
         })
-
-        console.log(m, d)
     }
 
     public async get(messageId: string) {
