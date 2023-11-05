@@ -42,8 +42,8 @@ client.on('messageDelete', message => {
         return
     }
 
-    commands.forEach(command => {
-        command.onDelete?.(message.id)
+    commands.some(command => {
+        return command.onDelete?.(message.id)
     })
 })
 

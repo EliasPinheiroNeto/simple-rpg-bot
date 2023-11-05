@@ -9,7 +9,7 @@ export default class Command {
     public async execute(interaction: CommandInteraction): Promise<void> { }
     public async buttons?(interaction: ButtonInteraction): Promise<void> { }
     public async modals?(interaction: ModalSubmitInteraction): Promise<void> { }
-    public async onDelete?(messageId: string): Promise<void> { }
+    public async onDelete?(messageId: string): Promise<boolean> { return false }
     public async verifyData?(clientGuilds: GuildManager): Promise<void> { }
 
     constructor(command: Command) {

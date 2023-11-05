@@ -9,7 +9,6 @@ export default class HealthBarsController extends DatabaseController {
     }
 
     public async insert(healthBar: IHealthBar, message: Message) {
-
         const dbChannel = await this.prisma.textChannel.findUnique({
             where: {
                 id: message.channelId
@@ -46,7 +45,7 @@ export default class HealthBarsController extends DatabaseController {
             })
         }
 
-        const m = await this.prisma.message.create({
+        await this.prisma.message.create({
             data: {
                 id: message.id,
                 channelId: message.channelId
@@ -54,11 +53,9 @@ export default class HealthBarsController extends DatabaseController {
         })
 
         // Criando o healthBar no banco com os relacionamentos
-        const d = await this.prisma.healthBar.create({
+        await this.prisma.healthBar.create({
             data: healthBar
         })
-
-        console.log(m, d)
     }
 
     public async get(messageId: string) {
@@ -72,17 +69,23 @@ export default class HealthBarsController extends DatabaseController {
     }
 
     public async delete(messageId: string) {
-        await this.prisma.healthBar.delete({
+        const message = await this.prisma.message.findUnique({
             where: {
-                messageId
+                id: messageId
             }
         })
+
+        if (!message) {
+            return false
+        }
 
         await this.prisma.message.delete({
             where: {
                 id: messageId
             }
         })
+
+        return true
     }
 
     public async update(healthBar: IHealthBar) {

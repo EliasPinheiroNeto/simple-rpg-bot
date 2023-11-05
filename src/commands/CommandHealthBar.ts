@@ -159,7 +159,7 @@ export default new Command({
 
     async onDelete(messageId) {
         const db = new HealthBarsController()
-        db.delete(messageId)
+        return await db.delete(messageId)
     },
 
     async verifyData(clientGuilds) {
