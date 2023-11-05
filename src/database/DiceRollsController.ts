@@ -85,26 +85,6 @@ export default class DiceRollsController extends DatabaseController {
         return diceRoll
     }
 
-    public async delete(messageId: string) {
-        const message = await this.prisma.message.findUnique({
-            where: {
-                id: messageId
-            }
-        })
-
-        if (!message) {
-            return false
-        }
-
-        await this.prisma.message.delete({
-            where: {
-                id: messageId
-            }
-        })
-
-        return true
-    }
-
     public async checkData(clientGuilds: Collection<string, Guild>) {
         const guildsId = clientGuilds.map(guild => guild.id)
         await this.prisma.guild.deleteMany({

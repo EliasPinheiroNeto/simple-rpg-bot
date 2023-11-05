@@ -5,6 +5,7 @@ import ICommand from './types/ICommand'
 import CommandHealthBar from './commands/CommandHealthBar'
 import CommandCreateRoll from './commands/CommandCreateRoll'
 import CommandPing from './commands/CommandPing'
+import prisma from './database/prisma'
 
 const client = new Client({ intents: ["Guilds", "GuildMessages", "MessageContent"] })
 const commands: ICommand[] = [new CommandHealthBar(), new CommandCreateRoll(), new CommandPing()]
@@ -46,8 +47,11 @@ client.on('messageDelete', async message => {
     if (!(message.author?.id == client.user?.id)) {
         return
     }
-    commands.forEach(async command => {
-        await command.onDelete?.(message.id)
+
+    await prisma.message.deleteMany({
+        where: {
+            id: message.id
+        }
     })
 })
 

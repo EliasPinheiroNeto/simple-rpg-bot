@@ -183,10 +183,6 @@ export default class CommandHealthBar implements ICommand {
         return true
     }
 
-    public async onDelete(messageId: string): Promise<boolean> {
-        const db = new HealthBarsController()
-        return await db.delete(messageId)
-    }
 
     private generateHealthMessage(healthMax: number, healthPoints: number = healthMax): string {
         const percent = (healthPoints / healthMax) * 10

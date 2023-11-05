@@ -142,9 +142,4 @@ export default class CommandCreateRoll implements ICommand {
 
         return true
     }
-
-    // public async onDelete(messageId: string) {
-    //     const db = new DiceRollsController()
-    //     return await db.delete(messageId)
-    // }
 }

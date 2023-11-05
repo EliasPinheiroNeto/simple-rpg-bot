@@ -68,26 +68,6 @@ export default class HealthBarsController extends DatabaseController {
         return healthBar
     }
 
-    public async delete(messageId: string) {
-        const message = await this.prisma.message.findUnique({
-            where: {
-                id: messageId
-            }
-        })
-
-        if (!message) {
-            return false
-        }
-
-        await this.prisma.message.delete({
-            where: {
-                id: messageId
-            }
-        })
-
-        return true
-    }
-
     public async update(healthBar: IHealthBar) {
         await this.prisma.healthBar.update({
             where: {
