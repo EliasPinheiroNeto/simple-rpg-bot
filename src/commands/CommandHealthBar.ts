@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, CacheType, RESTPostAPIChatInputApplicationCommandsJSONBody, ChatInputCommandInteraction, ModalSubmitInteraction } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, RESTPostAPIChatInputApplicationCommandsJSONBody, ChatInputCommandInteraction, ModalSubmitInteraction } from "discord.js";
 
 import HealthBarsController from "../database/HealthBarsController";
 import ICommand from "../types/ICommand";
@@ -24,9 +24,16 @@ export default class CommandHealthBar implements ICommand {
             }).toJSON()
     }
 
-    public async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-        interaction.reply("Criando barra de vida")
-        const healthMax = interaction.options.getNumber("hp", true)
+    public async execute(interaction: ChatInputCommandInteraction<"cached">): Promise<void> {
+        interaction.reply({
+            content: "Criando barra de vida",
+            ephemeral: true
+        })
+
+        if (!interaction.channel) {
+            interaction.editReply("Não foi possivel executar o comando neste canal")
+            return
+        }
 
         const buttonComponents = [
             { id: "health-d5", label: "-5", style: ButtonStyle.Danger },
@@ -44,40 +51,24 @@ export default class CommandHealthBar implements ICommand {
         const row = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(buttonComponents)
 
-        // Verificar esta area
-        try {
-            if (!interaction.channel) {
-                interaction.reply({
-                    ephemeral: true,
-                    content: "Algo deu errado"
-                })
-                return
-            }
+        const healthMax = interaction.options.getNumber("hp", true)
 
-            const message = await interaction.channel?.send({
-                content: this.generateHealthMessage(healthMax),
-                components: [row],
-            })
+        const message = await interaction.channel.send({
+            content: this.generateHealthMessage(healthMax),
+            components: [row],
+        })
 
-            const db = new HealthBarsController()
-            db.insert({
-                healthMax,
-                healthPoints: healthMax,
-                messageId: message.id,
-            }, message)
-
-        } catch (err) {
-            interaction.reply({
-                ephemeral: true,
-                content: "Algo deu errado"
-            })
-            console.log(err)
-        }
+        const db = new HealthBarsController()
+        db.insert({
+            healthMax,
+            healthPoints: healthMax,
+            messageId: message.id,
+        }, message)
 
         interaction.deleteReply()
     }
 
-    public async buttons(interaction: ButtonInteraction<CacheType>): Promise<boolean> {
+    public async buttons(interaction: ButtonInteraction<"cached">): Promise<boolean> {
         if (!interaction.customId.startsWith('health')) {
             return false
         }
@@ -110,27 +101,30 @@ export default class CommandHealthBar implements ICommand {
                 break;
 
             case 'health-config':
-                const setMax = new TextInputBuilder()
-                    .setCustomId('health-hmax')
-                    .setLabel("Novo máximo da barra de vida")
-                    .setStyle(TextInputStyle.Short)
-                    .setPlaceholder("Number")
-                    .setRequired(true)
-
-                const row = new ActionRowBuilder<TextInputBuilder>()
-                    .setComponents(setMax)
-
-                const modal = new ModalBuilder()
-                    .setTitle("Configurar barra de vida")
-                    .setCustomId('health-modal')
-                    .setComponents(row)
+                const modal = new ModalBuilder({
+                    title: "Configurar barra de vida",
+                    customId: "health-modal",
+                    components: [
+                        new ActionRowBuilder<TextInputBuilder>({
+                            components: [
+                                new TextInputBuilder({
+                                    custom_id: "health-hmax",
+                                    label: "Novo máximo da barra de vida",
+                                    style: TextInputStyle.Short,
+                                    placeholder: "Número",
+                                    required: true
+                                })
+                            ]
+                        })
+                    ]
+                })
 
                 interaction.showModal(modal)
                 return true
         }
 
         try {
-            await interaction.message.edit(this.generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
+            interaction.message.edit(this.generateHealthMessage(healthBar.healthMax, healthBar.healthPoints))
             await db.update(healthBar)
             interaction.deferUpdate()
         } catch (err) {
@@ -143,7 +137,7 @@ export default class CommandHealthBar implements ICommand {
         return true
     }
 
-    public async modals(interaction: ModalSubmitInteraction<CacheType>): Promise<boolean> {
+    public async modals(interaction: ModalSubmitInteraction<"cached">): Promise<boolean> {
         if (!interaction.customId.startsWith("health")) {
             return false
         }

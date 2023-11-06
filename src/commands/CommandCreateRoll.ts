@@ -99,7 +99,10 @@ export default class CommandCreateRoll implements ICommand {
         const db = new DiceRollsController()
         const diceRoll = await db.get(interaction.message.id)
         if (!diceRoll) {
-            interaction.reply("Erro no banco de dados")
+            interaction.reply({
+                content: "Erro no banco de dados",
+                ephemeral: true
+            })
             return true
         }
 
