@@ -11,10 +11,11 @@ export default class implements ICommand {
         this.builder = new SlashCommandBuilder()
             .setName(this.name)
             .setDescription("Comando de teste do bot, responde com Pong")
+            .setDMPermission(false)
             .toJSON()
     }
 
-    public async execute(interaction: ChatInputCommandInteraction<CacheType>) {
+    public async execute(interaction: ChatInputCommandInteraction<"cached">) {
         await interaction.reply("Pong!")
     }
 }

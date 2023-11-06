@@ -14,6 +14,7 @@ export default class CommandCreateRoll implements ICommand {
         this.builder = new SlashCommandBuilder()
             .setName(this.name)
             .setDescription("Cria uma nova rolagem de dados")
+            .setDMPermission(false)
             .addStringOption(option => {
                 return option
                     .setName("roll-name")
@@ -36,43 +37,40 @@ export default class CommandCreateRoll implements ICommand {
             }).toJSON()
     }
 
-    public async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    public async execute(interaction: ChatInputCommandInteraction<"cached">): Promise<void> {
         interaction.reply({
             content: "Criando rolagem",
             ephemeral: true,
         })
 
-        const { options, channel } = interaction
-        const rollInput = options.getString("roll", true)
-
-        if (!channel) {
-            interaction.editReply({ content: "Algo deu errado" })
+        if (!interaction.channel) {
+            interaction.editReply("Não é possivel executar o comando no canal atual")
             return
         }
 
+        const rollInput = interaction.options.getString("roll", true)
         const roll = new Roller(rollInput)
-
         if (!roll.validinput) {
-            interaction.editReply({ content: "Sintaxe invalida" })
+            interaction.editReply("Sintaxe invalida")
             return
         }
 
-        const buttonRoll = new ButtonBuilder()
-            .setCustomId("roll-r")
-            .setLabel("🎲")
-            .setStyle(ButtonStyle.Primary)
-
-        const row = new ActionRowBuilder<ButtonBuilder>()
-            .addComponents(buttonRoll)
-
-        const outputChannelId = options.getChannel("dice-channel")?.id
-        const rollDescription = options.getString("roll-description")
-        const rollName = options.getString("roll-name", true)
+        const outputChannelId = interaction.options.getChannel("dice-channel")?.id
+        const rollDescription = interaction.options.getString("roll-description")
+        const rollName = interaction.options.getString("roll-name", true)
 
         try {
-            const message = await channel.send({
-                content: `**${rollName}**  _[ ${roll.input} ]_ ${rollDescription ? `\n_${rollDescription}_` : ''}`,
-                components: [row]
+            const message = await interaction.channel.send({
+                content: `**${rollName}**  _[ ${roll.input} ]_ \n` +
+                    `_${rollDescription || ''}_`,
+                components: [
+                    new ActionRowBuilder<ButtonBuilder>()
+                        .addComponents(new ButtonBuilder({
+                            customId: "roll-r",
+                            label: "🎲",
+                            style: ButtonStyle.Primary
+                        }))
+                ]
             })
 
             const db = new DiceRollsController()
@@ -85,7 +83,7 @@ export default class CommandCreateRoll implements ICommand {
             }, message)
 
         } catch (err) {
-            interaction.editReply({ content: "Algo deu errado" })
+            interaction.editReply("Algo deu errado")
             console.log(err)
             return
         }
@@ -93,19 +91,15 @@ export default class CommandCreateRoll implements ICommand {
         interaction.deleteReply()
     }
 
-    public async buttons(interaction: ButtonInteraction<CacheType>): Promise<boolean> {
+    public async buttons(interaction: ButtonInteraction<"cached">): Promise<boolean> {
         if (!interaction.customId.startsWith("roll")) {
             return false
         }
 
-        const { message, member, user } = interaction
         const db = new DiceRollsController()
-        const diceRoll = await db.get(message.id)
+        const diceRoll = await db.get(interaction.message.id)
         if (!diceRoll) {
-            interaction.reply({
-                content: "Erro de banco de dados",
-                ephemeral: true
-            })
+            interaction.reply("Erro no banco de dados")
             return true
         }
 
@@ -113,30 +107,24 @@ export default class CommandCreateRoll implements ICommand {
             case "roll-r":
                 const roll = new Roller(diceRoll.roll)
 
-                try {
-                    interaction.deferUpdate()
-                    await message.edit({
-                        content: ` ** ${diceRoll.rollName} ** _[${diceRoll.roll} ]_ \n` +
-                            `${diceRoll.rollDescription ? `_${diceRoll.rollDescription}_ \n` : ''}\n` +
-                            `Último resultado: \n${roll.expressionResults.join('\n')}`,
-                    })
+                await interaction.message.edit({
+                    content: ` **${diceRoll.rollName}** _[${diceRoll.roll} ]_ \n` +
+                        `${diceRoll?.rollDescription ? diceRoll.rollDescription + "\n" : ''}\n` +
+                        `Último resultado: \n${roll.expressionResults.join('\n')}`,
+                })
 
-                    if (diceRoll.outputChannelId) {
-                        const secondChannel = await interaction.guild?.channels.fetch(diceRoll.outputChannelId)
-                        if (!secondChannel || !secondChannel.isTextBased()) {
-                            return true
-                        }
+                interaction.deferUpdate()
 
-                        const nickname = member instanceof GuildMember ? member.nickname ? member.nickname : user.displayName : user.displayName
-                        secondChannel.send({
-                            content: `**${nickname}** rolou ${diceRoll.roll} \n${roll.expressionResults.join('\n')}`
-                        })
-                    }
-                } catch (err) {
-                    interaction.reply({ content: "Algo deu errado", ephemeral: true })
-                    console.log(err)
-                    return true
+                const secondChannel = interaction.guild.channels.cache.find(c => c.id == diceRoll.outputChannelId)
+                if (!secondChannel || !secondChannel.isTextBased()) {
+                    break
                 }
+
+                const name = interaction.member.nickname || interaction.member.displayName
+                secondChannel.send({
+                    content: `**${name}** rolou ${diceRoll.roll} \n` +
+                        `${roll.expressionResults.join('\n')}`
+                })
                 break
         }
 

@@ -14,6 +14,7 @@ export default class CommandHealthBar implements ICommand {
         this.builder = new SlashCommandBuilder()
             .setName(this.name)
             .setDescription("Creates a simple health bar")
+            .setDMPermission(false)
             .addNumberOption(option => {
                 return option
                     .setName("hp")
