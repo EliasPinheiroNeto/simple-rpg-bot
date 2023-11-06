@@ -69,4 +69,12 @@ export default class DatabaseController {
             }
         })
     }
+
+    public async deleteMessage(messageId: string) {
+        await this.prisma.message.deleteMany({
+            where: {
+                id: messageId
+            }
+        })
+    }
 }
